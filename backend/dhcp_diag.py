@@ -5,15 +5,24 @@ from scapy.all import Ether, IP, UDP, BOOTP, DHCP, srp, get_if_hwaddr
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
 
+def generate_random_mac():
+    # Set the locally administered unicast bit (0x02) to avoid conflicts
+    mac = [0x02, random.randint(0x00, 0xff), random.randint(0x00, 0xff),
+           random.randint(0x00, 0xff), random.randint(0x00, 0xff), random.randint(0x00, 0xff)]
+    return ":".join(f"{x:02x}" for x in mac)
+
 def detect_dhcp_servers(interface: str, timeout: int = 3):
     """
     Broadcasts a DHCP Discover packet on the specified interface
     and listens for DHCP Offer replies. Returns a list of found DHCP servers.
     """
     try:
-        # Get MAC address string and parse it into raw bytes
+        # Get actual MAC address of interface
         mac_str = get_if_hwaddr(interface)
-        raw_mac = bytes.fromhex(mac_str.replace(":", ""))
+        
+        # Generate a random client MAC address to bypass router lease caches
+        fake_mac_str = generate_random_mac()
+        fake_raw_mac = bytes.fromhex(fake_mac_str.replace(":", ""))
         
         # Transaction ID
         xid = random.randint(1, 0xFFFFFFFF)
@@ -23,7 +32,7 @@ def detect_dhcp_servers(interface: str, timeout: int = 3):
             Ether(src=mac_str, dst="ff:ff:ff:ff:ff:ff") /
             IP(src="0.0.0.0", dst="255.255.255.255") /
             UDP(sport=68, dport=67) /
-            BOOTP(chaddr=raw_mac, xid=xid) /
+            BOOTP(chaddr=fake_raw_mac, xid=xid, flags=0x8000) /  # 0x8000 sets the broadcast flag
             DHCP(options=[("message-type", "discover"), "end"])
         )
         
