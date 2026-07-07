@@ -1,6 +1,7 @@
 import os
 import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -17,6 +18,7 @@ from lldp_cdp import LldpCdpParser
 from ip_conflict import IpConflictDetector
 from dhcp_server import LocalDhcpServer
 from dns_cable_diag import audit_cable_link, measure_dns_latency
+from ping_logger import PingMonitor
 
 app = FastAPI(title="RPi AV/IT Network Powerhouse API")
 
@@ -35,6 +37,7 @@ serial_bridge = SerialBridge()
 lldp_parser = LldpCdpParser()
 conflict_detector = IpConflictDetector()
 dhcp_server = LocalDhcpServer()
+ping_monitor = PingMonitor()
 
 # Pydantic models for request bodies
 class InterfaceConfig(BaseModel):
@@ -82,6 +85,15 @@ class DhcpServerControlRequest(BaseModel):
 
 class DiagnosticRequest(BaseModel):
     interface: str
+
+class StealthRequest(BaseModel):
+    interface: str
+    active: bool
+
+class PingMonitorRequest(BaseModel):
+    target: str
+    interface: str
+    active: bool
 
 
 # --- API ROUTES ---
@@ -236,6 +248,7 @@ def shutdown_event():
     conflict_detector.stop()
     dhcp_server.stop()
     sniffer.stop()
+    ping_monitor.stop()
 
 # --- PHASE 2 DIAGNOSTICS ROUTES ---
 
@@ -275,6 +288,49 @@ def run_cable_and_dns_diagnostics(req: DiagnosticRequest):
         "cable": cable_res,
         "dns": dns_res
     }
+
+@app.post("/api/network/stealth")
+def toggle_stealth_mode(req: StealthRequest):
+    try:
+        import subprocess
+        if req.active:
+            # Stealth mode ON: flush IP addresses from the interface
+            # The interface remains UP and Scapy can still sniff packets,
+            # but the RPi does not reply to ARP or IP traffic.
+            subprocess.run(["sudo", "ip", "addr", "flush", "dev", req.interface], check=True)
+            return {"success": True, "message": f"Stealth mode enabled on {req.interface} (Interface IPs flushed)"}
+        else:
+            # Stealth mode OFF: re-trigger DHCP client
+            if subprocess.run(["which", "nmcli"], stdout=subprocess.DEVNULL).returncode == 0:
+                subprocess.run(["sudo", "nmcli", "device", "reapply", req.interface], check=False)
+            else:
+                subprocess.run(["sudo", "dhclient", req.interface], check=False)
+            return {"success": True, "message": f"Stealth mode disabled on {req.interface} (IP assignment restored)"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/ping/monitor/status")
+def get_ping_monitor_status():
+    return ping_monitor.get_status()
+
+@app.post("/api/ping/monitor/configure")
+def configure_ping_monitor(req: PingMonitorRequest):
+    if req.active:
+        ping_monitor.start(req.target, req.interface)
+        return {"success": True, "message": f"Ping monitor started on target {req.target}"}
+    else:
+        ping_monitor.stop()
+        return {"success": True, "message": "Ping monitor stopped"}
+
+@app.get("/api/ping/monitor/download")
+def download_ping_log():
+    if os.path.exists(ping_monitor.log_file):
+        return FileResponse(
+            path=ping_monitor.log_file,
+            filename="ping_diagnostics.csv",
+            media_type="text/csv"
+        )
+    raise HTTPException(status_code=404, detail="Ping diagnostics log file not found.")
 
 # --- WEBSOCKET FOR RS232 TERMINAL ---
 

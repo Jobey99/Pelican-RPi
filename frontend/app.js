@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initDhcpAndIperf();
     initAvControls();
     initPhase2Features();
+    initPhase3Features();
     
     // Initial fetch of configuration details
     fetchInterfaces();
@@ -21,12 +22,14 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchLldpInfo();
     fetchConflicts();
     fetchDhcpServerStatus();
+    fetchPingStatus();
     
     // Poll active interface listings periodically
     interfacePollInterval = setInterval(fetchInterfaces, 5000);
     setInterval(fetchLldpInfo, 5000);
     setInterval(fetchConflicts, 3000);
     setInterval(fetchDhcpServerStatus, 5000);
+    setInterval(fetchPingStatus, 1000);
 });
 
 // --- TAB NAVIGATION ---
@@ -867,6 +870,134 @@ function fetchDhcpServerStatus() {
                 toggleDhcpServerBtn.className = "btn btn-secondary";
                 dhcpServerStatusText.innerText = "Server status: Deactivated";
                 dhcpServerStatusText.className = "status-msg text-muted";
+            }
+        });
+}
+
+// --- PHASE 3 ADVANCED FEATURES ---
+
+function initPhase3Features() {
+    const stealthBtn = document.getElementById("toggle-stealth-btn");
+    const pingBtn = document.getElementById("toggle-ping-monitor-btn");
+
+    stealthBtn.addEventListener("click", () => {
+        const isStealthActive = stealthBtn.classList.contains("btn-danger");
+        const selectedIface = document.getElementById("sniffer-interface-select").value;
+        stealthBtn.disabled = true;
+
+        fetch(API_BASE + "/api/network/stealth", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ interface: selectedIface, active: !isStealthActive })
+        })
+        .then(r => r.json())
+        .then(() => {
+            if (!isStealthActive) {
+                stealthBtn.innerText = "Stealth: On";
+                stealthBtn.className = "btn btn-danger";
+                // Trigger sniffer start in passive mode automatically
+                document.getElementById("toggle-sniffer-btn").click();
+            } else {
+                stealthBtn.innerText = "Stealth: Off";
+                stealthBtn.className = "btn btn-secondary";
+            }
+            fetchInterfaces();
+        })
+        .catch(err => alert("Stealth mode change failed: " + err))
+        .finally(() => {
+            stealthBtn.disabled = false;
+        });
+    });
+
+    pingBtn.addEventListener("click", () => {
+        const isRunning = pingBtn.classList.contains("btn-danger");
+        const target = document.getElementById("ping-monitor-target").value.trim();
+        const selectedIface = document.getElementById("sniffer-interface-select").value;
+
+        if (!target && !isRunning) {
+            alert("Please specify a target IP/host to ping");
+            return;
+        }
+
+        pingBtn.disabled = true;
+
+        fetch(API_BASE + "/api/ping/monitor/configure", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target: target, interface: selectedIface, active: !isRunning })
+        })
+        .then(r => r.json())
+        .then(() => {
+            fetchPingStatus();
+        })
+        .catch(err => alert("Ping monitor control failed: " + err))
+        .finally(() => {
+            pingBtn.disabled = false;
+        });
+    });
+}
+
+function fetchPingStatus() {
+    fetch(API_BASE + "/api/ping/monitor/status")
+        .then(r => r.json())
+        .then(data => {
+            const pingBtn = document.getElementById("toggle-ping-monitor-btn");
+            const sentEl = document.getElementById("ping-stat-sent");
+            const lostEl = document.getElementById("ping-stat-lost");
+            const lossPctEl = document.getElementById("ping-stat-loss-pct");
+            const avgEl = document.getElementById("ping-stat-avg");
+            const sparkline = document.getElementById("ping-sparkline");
+
+            if (data.active) {
+                pingBtn.innerText = "Stop Logging";
+                pingBtn.className = "btn btn-danger";
+                document.getElementById("ping-monitor-target").disabled = true;
+            } else {
+                pingBtn.innerText = "Start Logging";
+                pingBtn.className = "btn btn-primary";
+                document.getElementById("ping-monitor-target").disabled = false;
+            }
+
+            // Stats
+            sentEl.innerText = data.sent;
+            lostEl.innerText = data.lost;
+            lossPctEl.innerText = data.loss_percent + "%";
+            avgEl.innerText = data.avg_rtt + " ms";
+
+            // Color coding loss ratio
+            if (data.loss_percent > 10) {
+                lossPctEl.style.color = "var(--danger)";
+            } else if (data.loss_percent > 2) {
+                lossPctEl.style.color = "var(--warning)";
+            } else {
+                lossPctEl.style.color = "var(--success)";
+            }
+
+            // Render live QoS Sparkline
+            if (data.history && data.history.length > 0) {
+                sparkline.innerHTML = data.history.map(rtt => {
+                    let height = 0;
+                    let color = "rgba(255,255,255,0.1)"; // packet drop / grey
+                    
+                    if (rtt !== null) {
+                        // Max RTT scale is 200ms
+                        height = Math.min(60, Math.max(5, (rtt / 200) * 60));
+                        if (rtt < 50) {
+                            color = "var(--success)";
+                        } else if (rtt < 150) {
+                            color = "var(--warning)";
+                        } else {
+                            color = "var(--danger)";
+                        }
+                    } else {
+                        height = 60; // full height for drops
+                        color = "var(--danger)";
+                    }
+                    
+                    return `<div style="flex-grow: 1; min-width: 3px; max-width: 8px; height: ${height}px; background-color: ${color}; border-radius: 2px 2px 0 0;"></div>`;
+                }).join("");
+            } else {
+                sparkline.innerHTML = `<div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; width: 100%;">Monitor inactive. Click Start Logging to render graph.</div>`;
             }
         });
 }

@@ -65,6 +65,7 @@
                         <option value="eth0">eth0 (Ethernet)</option>
                     </select>
                     <button id="toggle-sniffer-btn" class="btn btn-primary">Start Sniffing</button>
+                    <button id="toggle-stealth-btn" class="btn btn-secondary">Stealth: Off</button>
                 </div>
             </header>
 
@@ -282,6 +283,64 @@
                             </div>
                             <button id="send-wol-btn" class="btn btn-primary margin-top-sm">Send Wake Magic Packet</button>
                             <div id="wol-output" class="status-msg margin-top">Status: Idle</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QoS Link Monitor & Logger -->
+                <div class="card margin-top">
+                    <h3>📈 Continuous QoS Link Monitor (Ping & Jitter Logger)</h3>
+                    <p class="card-desc">Periodically ping a gateway or internet host to monitor link drops, latency spikes, and packet loss. Logs hourly summaries to CSV.</p>
+                    
+                    <div class="form-group-row-2">
+                        <div class="form-group row" style="margin-bottom: 0;">
+                            <div class="form-item">
+                                <label for="ping-monitor-target">Target IP/Host:</label>
+                                <input type="text" id="ping-monitor-target" value="8.8.8.8" placeholder="e.g. 8.8.8.8">
+                            </div>
+                        </div>
+                        <div class="form-item align-end flex-row" style="gap: 12px;">
+                            <button id="toggle-ping-monitor-btn" class="btn btn-primary">Start Logging</button>
+                            <a id="download-ping-log-btn" href="/api/ping/monitor/download" download class="btn btn-secondary">Download CSV Report</a>
+                        </div>
+                    </div>
+
+                    <div class="grid-2-col margin-top" style="grid-template-columns: 1fr 2fr; gap: 24px;">
+                        <!-- Ping stats -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <div class="sidebar-status" style="background: rgba(0,0,0,0.15); padding: 10px 14px;">
+                                <span class="text-muted" style="font-size: 0.75rem; font-family: var(--font-sans); font-weight: 600;">PACKETS SENT</span>
+                                <span id="ping-stat-sent" style="font-weight: 700;">0</span>
+                            </div>
+                            <div class="sidebar-status" style="background: rgba(0,0,0,0.15); padding: 10px 14px;">
+                                <span class="text-muted" style="font-size: 0.75rem; font-family: var(--font-sans); font-weight: 600;">PACKETS LOST</span>
+                                <span id="ping-stat-lost" style="font-weight: 700;">0</span>
+                            </div>
+                            <div class="sidebar-status" style="background: rgba(0,0,0,0.15); padding: 10px 14px;">
+                                <span class="text-muted" style="font-size: 0.75rem; font-family: var(--font-sans); font-weight: 600;">LOSS RATIO</span>
+                                <span id="ping-stat-loss-pct" style="font-weight: 700; color: var(--danger);">0%</span>
+                            </div>
+                            <div class="sidebar-status" style="background: rgba(0,0,0,0.15); padding: 10px 14px;">
+                                <span class="text-muted" style="font-size: 0.75rem; font-family: var(--font-sans); font-weight: 600;">AVG LATENCY</span>
+                                <span id="ping-stat-avg" style="font-weight: 700; color: var(--accent);">0 ms</span>
+                            </div>
+                        </div>
+
+                        <!-- Sparkline/Visual history bar -->
+                        <div class="sidebar-status" style="background: rgba(0,0,0,0.25); display: flex; flex-direction: column; justify-content: space-between; padding: 16px;">
+                            <span class="text-muted" style="font-size: 0.75rem; font-family: var(--font-sans); font-weight: 600; margin-bottom: 8px;">LIVE ROLLING QoS GRAPH (LAST 60 SECONDS)</span>
+                            <div id="ping-sparkline" style="display: flex; align-items: flex-end; gap: 3px; height: 60px; border-bottom: 1px solid var(--border-color); padding-bottom: 2px;">
+                                <!-- Dynamically generated bars via JS -->
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; font-weight: 600;">
+                                <span>60s ago</span>
+                                <span style="display: inline-flex; align-items: center; gap: 10px;">
+                                    <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></span> &lt;50ms</span>
+                                    <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: var(--warning); border-radius: 50%;"></span> 50-150ms</span>
+                                    <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: var(--danger); border-radius: 50%;"></span> &gt;150ms/Drop</span>
+                                </span>
+                                <span>Now</span>
+                            </div>
                         </div>
                     </div>
                 </div>
