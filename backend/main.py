@@ -377,7 +377,7 @@ def download_site_commission_report(client: str = "Default Project", tech: str =
     }
     
     ping_status = ping_monitor.get_status()
-    devices = sniffer.get_devices()
+    devices = sniffer.get_results()
     
     # Generate standalone print-ready HTML
     report_html = generate_commissioning_report(
