@@ -12,14 +12,21 @@ document.addEventListener("DOMContentLoaded", () => {
     initSerialControls();
     initDhcpAndIperf();
     initAvControls();
+    initPhase2Features();
     
     // Initial fetch of configuration details
     fetchInterfaces();
     fetchSerialStatus();
     fetchIperfStatus();
+    fetchLldpInfo();
+    fetchConflicts();
+    fetchDhcpServerStatus();
     
     // Poll active interface listings periodically
     interfacePollInterval = setInterval(fetchInterfaces, 5000);
+    setInterval(fetchLldpInfo, 5000);
+    setInterval(fetchConflicts, 3000);
+    setInterval(fetchDhcpServerStatus, 5000);
 });
 
 // --- TAB NAVIGATION ---
@@ -716,5 +723,151 @@ function initAvControls() {
             wolOutput.innerText = "Error: " + err;
         });
     });
+}
+
+// --- PHASE 2 ULTIMATE FLUKE SUITE ---
+
+function initPhase2Features() {
+    const clearConflictsBtn = document.getElementById("clear-conflicts-btn");
+    const toggleDhcpServerBtn = document.getElementById("toggle-dhcp-server-btn");
+    const runLinkAuditBtn = document.getElementById("run-link-audit-btn");
+
+    clearConflictsBtn.addEventListener("click", () => {
+        fetch(API_BASE + "/api/network/conflicts/clear", { method: "POST" })
+            .then(r => r.json())
+            .then(() => {
+                document.getElementById("ip-conflict-alert").classList.add("hidden");
+            });
+    });
+
+    toggleDhcpServerBtn.addEventListener("click", () => {
+        const isCurrentlyActive = toggleDhcpServerBtn.classList.contains("btn-danger");
+        const selectedIface = document.getElementById("sniffer-interface-select").value;
+        toggleDhcpServerBtn.disabled = true;
+
+        fetch(API_BASE + "/api/dhcp/server/control", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ active: !isCurrentlyActive, interface: selectedIface })
+        })
+        .then(r => r.json())
+        .then(() => {
+            fetchDhcpServerStatus();
+        })
+        .catch(err => alert("DHCP Server control failed: " + err))
+        .finally(() => {
+            toggleDhcpServerBtn.disabled = false;
+        });
+    });
+
+    runLinkAuditBtn.addEventListener("click", () => {
+        const selectedIface = document.getElementById("sniffer-interface-select").value;
+        runLinkAuditBtn.disabled = true;
+        runLinkAuditBtn.innerText = "Auditing Link...";
+
+        document.getElementById("diag-link-speed").innerText = "Testing...";
+        document.getElementById("diag-dns-time").innerText = "Testing...";
+        const warningBox = document.getElementById("diag-link-warning");
+        warningBox.innerText = "Running interface diagnostics...";
+        warningBox.className = "status-msg margin-top-sm text-muted";
+
+        fetch(API_BASE + "/api/network/diagnostics", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ interface: selectedIface })
+        })
+        .then(r => r.json())
+        .then(data => {
+            // Speed / Duplex
+            const cable = data.cable;
+            if (cable.success) {
+                document.getElementById("diag-link-speed").innerText = `${cable.speed} / ${cable.duplex}`;
+                if (cable.warning) {
+                    warningBox.innerText = cable.warning_message;
+                    warningBox.className = "status-msg margin-top-sm text-danger";
+                } else {
+                    warningBox.innerText = cable.warning_message;
+                    warningBox.className = "status-msg margin-top-sm text-success";
+                }
+            } else {
+                document.getElementById("diag-link-speed").innerText = "Error";
+                warningBox.innerText = "Link Audit Error: " + cable.error;
+                warningBox.className = "status-msg margin-top-sm text-danger";
+            }
+
+            // DNS
+            const dns = data.dns;
+            if (dns.success) {
+                document.getElementById("diag-dns-time").innerText = `${dns.latency_ms} ms`;
+            } else {
+                document.getElementById("diag-dns-time").innerText = "Failed";
+            }
+        })
+        .catch(err => {
+            alert("Diagnostics failed: " + err);
+        })
+        .finally(() => {
+            runLinkAuditBtn.disabled = false;
+            runLinkAuditBtn.innerText = "Run Diagnostics";
+        });
+    });
+}
+
+function fetchLldpInfo() {
+    fetch(API_BASE + "/api/network/lldp")
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById("lldp-switch-name").innerText = data.switch_name;
+            document.getElementById("lldp-port-id").innerText = data.port_id;
+            document.getElementById("lldp-vlan").innerText = data.vlan;
+            document.getElementById("lldp-ip").innerText = data.ip;
+            document.getElementById("lldp-proto").innerText = data.protocol;
+            document.getElementById("lldp-model").innerText = data.model || "";
+        });
+}
+
+function fetchConflicts() {
+    fetch(API_BASE + "/api/network/conflicts")
+        .then(r => r.json())
+        .then(conflicts => {
+            const alertBanner = document.getElementById("ip-conflict-alert");
+            const detailsBox = document.getElementById("ip-conflict-details");
+
+            if (conflicts && conflicts.length > 0) {
+                alertBanner.classList.remove("hidden");
+                detailsBox.innerHTML = conflicts.map(conf => `
+                    <div>• Conflict on IP <strong>${conf.ip}</strong>: MAC <strong>${conf.mac_a}</strong> is fighting MAC <strong>${conf.mac_b}</strong> (Detected: ${conf.time})</div>
+                `).join("");
+            } else {
+                alertBanner.classList.add("hidden");
+            }
+        });
+}
+
+function fetchDhcpServerStatus() {
+    fetch(API_BASE + "/api/dhcp/server/status")
+        .then(r => r.json())
+        .then(data => {
+            const toggleDhcpServerBtn = document.getElementById("toggle-dhcp-server-btn");
+            const dhcpServerStatusText = document.getElementById("dhcp-server-status-text");
+
+            if (data.active) {
+                toggleDhcpServerBtn.innerText = "Disable DHCP Server";
+                toggleDhcpServerBtn.className = "btn btn-danger";
+                let msg = `Server active on 192.168.99.1. `;
+                if (data.leased) {
+                    msg += `<strong class="text-success">Active lease given to MAC: ${data.client_mac}</strong>`;
+                } else {
+                    msg += `<span class="text-warning">Listening for client requests...</span>`;
+                }
+                dhcpServerStatusText.innerHTML = msg;
+                dhcpServerStatusText.className = "status-msg text-success";
+            } else {
+                toggleDhcpServerBtn.innerText = "Enable DHCP Server";
+                toggleDhcpServerBtn.className = "btn btn-secondary";
+                dhcpServerStatusText.innerText = "Server status: Deactivated";
+                dhcpServerStatusText.className = "status-msg text-muted";
+            }
+        });
 }
 

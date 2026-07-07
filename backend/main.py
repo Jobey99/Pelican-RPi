@@ -13,6 +13,10 @@ from serial_bridge import SerialBridge
 from dhcp_diag import detect_dhcp_servers
 from iperf_control import get_iperf_status, start_iperf_server, stop_iperf_server
 from av_control import send_wol_packet, send_pjlink_command
+from lldp_cdp import LldpCdpParser
+from ip_conflict import IpConflictDetector
+from dhcp_server import LocalDhcpServer
+from dns_cable_diag import audit_cable_link, measure_dns_latency
 
 app = FastAPI(title="RPi AV/IT Network Powerhouse API")
 
@@ -28,6 +32,9 @@ app.add_middleware(
 # Instantiate background services
 sniffer = PassiveSniffer()
 serial_bridge = SerialBridge()
+lldp_parser = LldpCdpParser()
+conflict_detector = IpConflictDetector()
+dhcp_server = LocalDhcpServer()
 
 # Pydantic models for request bodies
 class InterfaceConfig(BaseModel):
@@ -68,6 +75,13 @@ class PjLinkRequest(BaseModel):
     ip: str
     command: str
     password: Optional[str] = None
+
+class DhcpServerControlRequest(BaseModel):
+    active: bool
+    interface: str
+
+class DiagnosticRequest(BaseModel):
+    interface: str
 
 
 # --- API ROUTES ---
@@ -207,6 +221,60 @@ def trigger_wake_on_lan(req: WolRequest):
     if not res["success"]:
         raise HTTPException(status_code=500, detail=res.get("error", "Wake-on-LAN failed"))
     return res
+
+# --- STARTUP / SHUTDOWN LIFECYCLE ---
+
+@app.on_event("startup")
+def startup_event():
+    # Automatically start LLDP parser and IP Conflict sniffer on eth0 by default
+    lldp_parser.start("eth0")
+    conflict_detector.start("eth0")
+
+@app.on_event("shutdown")
+def shutdown_event():
+    lldp_parser.stop()
+    conflict_detector.stop()
+    dhcp_server.stop()
+    sniffer.stop()
+
+# --- PHASE 2 DIAGNOSTICS ROUTES ---
+
+@app.get("/api/network/lldp")
+def get_lldp_info():
+    return lldp_parser.get_info()
+
+@app.get("/api/network/conflicts")
+def get_ip_conflicts():
+    return conflict_detector.get_conflicts()
+
+@app.post("/api/network/conflicts/clear")
+def clear_ip_conflicts():
+    conflict_detector.clear_conflicts()
+    return {"message": "IP conflicts cleared"}
+
+@app.get("/api/dhcp/server/status")
+def get_dhcp_server_status():
+    return dhcp_server.get_status()
+
+@app.post("/api/dhcp/server/control")
+def control_dhcp_server(req: DhcpServerControlRequest):
+    if req.active:
+        res = dhcp_server.start(req.interface)
+    else:
+        res = dhcp_server.stop()
+    if not res["success"]:
+        raise HTTPException(status_code=500, detail=res["error"])
+    return res
+
+@app.post("/api/network/diagnostics")
+def run_cable_and_dns_diagnostics(req: DiagnosticRequest):
+    cable_res = audit_cable_link(req.interface)
+    dns_res = measure_dns_latency()
+    return {
+        "interface": req.interface,
+        "cable": cable_res,
+        "dns": dns_res
+    }
 
 # --- WEBSOCKET FOR RS232 TERMINAL ---
 
