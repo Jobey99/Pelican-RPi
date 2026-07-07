@@ -1,6 +1,7 @@
 import threading
 import socket
 import time
+import asyncio
 import serial
 import serial.tools.list_ports
 from fastapi import WebSocket
@@ -11,6 +12,7 @@ class SerialBridge:
         self.baudrate = 9600
         self.ser = None
         self.running = False
+        self.loop = None
         
         # TCP Server settings
         self.tcp_port = 23
@@ -183,20 +185,19 @@ class SerialBridge:
 
     def register_websocket(self, websocket: WebSocket):
         self.active_websockets.add(websocket)
+        try:
+            self.loop = asyncio.get_running_loop()
+        except RuntimeError:
+            pass
 
     def unregister_websocket(self, websocket: WebSocket):
         self.active_websockets.discard(websocket)
 
     def _broadcast_to_websockets(self, data: bytes):
-        if not self.active_websockets:
+        if not self.active_websockets or not self.loop:
             return
         
-        # Fast import of asyncio event loop utilities to schedule sending
-        import asyncio
-        loop = asyncio.get_event_loop()
-        
-        # Convert bytes to string (with lossy decoding) for standard JSON/Text WS transport,
-        # or send binary.
+        # Convert bytes to string (with lossy decoding) for standard JSON/Text WS transport
         text_data = data.decode("utf-8", errors="ignore")
         
         async def send_all():
@@ -209,7 +210,4 @@ class SerialBridge:
             for ws in disconnected:
                 self.active_websockets.discard(ws)
                 
-        if loop.is_running():
-            asyncio.run_coroutine_threadsafe(send_all(), loop)
-        else:
-            asyncio.run(send_all())
+        asyncio.run_coroutine_threadsafe(send_all(), self.loop)
