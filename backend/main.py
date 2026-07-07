@@ -10,6 +10,9 @@ from typing import List, Optional
 from network_manager import get_interfaces, set_interface_ip_runtime, set_interface_dhcp_runtime, arp_scan
 from sniffer import PassiveSniffer
 from serial_bridge import SerialBridge
+from dhcp_diag import detect_dhcp_servers
+from iperf_control import get_iperf_status, start_iperf_server, stop_iperf_server
+from av_control import send_wol_packet, send_pjlink_command
 
 app = FastAPI(title="RPi AV/IT Network Powerhouse API")
 
@@ -51,6 +54,21 @@ class SerialConnectRequest(BaseModel):
 class SerialBridgeRequest(BaseModel):
     active: bool
     port: int = 23
+
+class DhcpTestRequest(BaseModel):
+    interface: str
+
+class IperfControlRequest(BaseModel):
+    active: bool
+
+class WolRequest(BaseModel):
+    mac: str
+
+class PjLinkRequest(BaseModel):
+    ip: str
+    command: str
+    password: Optional[str] = None
+
 
 # --- API ROUTES ---
 
@@ -154,6 +172,41 @@ def get_serial_status():
         "tcp_bridge_active": serial_bridge.tcp_server_socket is not None,
         "tcp_bridge_port": serial_bridge.tcp_port
     }
+
+@app.post("/api/dhcp/test")
+def trigger_dhcp_test(req: DhcpTestRequest):
+    res = detect_dhcp_servers(req.interface)
+    if not res["success"]:
+        raise HTTPException(status_code=500, detail=res.get("error", "DHCP test failed"))
+    return res
+
+@app.get("/api/iperf/status")
+def get_iperf_server_status():
+    return get_iperf_status()
+
+@app.post("/api/iperf/control")
+def control_iperf_server(req: IperfControlRequest):
+    if req.active:
+        res = start_iperf_server()
+    else:
+        res = stop_iperf_server()
+    if not res["success"]:
+        raise HTTPException(status_code=500, detail=res.get("error", "iPerf3 control failed"))
+    return res
+
+@app.post("/api/control/pjlink")
+def control_projector_pjlink(req: PjLinkRequest):
+    res = send_pjlink_command(req.ip, req.command, req.password)
+    if not res["success"]:
+        raise HTTPException(status_code=500, detail=res.get("error", "PJLink transmission failed"))
+    return res
+
+@app.post("/api/control/wol")
+def trigger_wake_on_lan(req: WolRequest):
+    res = send_wol_packet(req.mac)
+    if not res["success"]:
+        raise HTTPException(status_code=500, detail=res.get("error", "Wake-on-LAN failed"))
+    return res
 
 # --- WEBSOCKET FOR RS232 TERMINAL ---
 

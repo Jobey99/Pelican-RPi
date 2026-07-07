@@ -153,6 +153,97 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="grid-2-col margin-top">
+                    <!-- DHCP Diagnostic Card -->
+                    <div class="card">
+                        <h3>🔍 DHCP & Rogue Server Detector</h3>
+                        <p class="card-desc">Broadcasts a DHCP Discover packet to map all active lease servers on this network path.</p>
+                        <div class="form-group row">
+                            <div class="form-item align-end">
+                                <button id="run-dhcp-test-btn" class="btn btn-primary">Scan DHCP Servers</button>
+                            </div>
+                        </div>
+                        <div class="table-responsive margin-top">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Server IP</th>
+                                        <th>Subnet Mask</th>
+                                        <th>Router Gateway</th>
+                                        <th>DNS Server(s)</th>
+                                        <th>Lease Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dhcp-test-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center">Click Scan DHCP Servers to discover.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- iPerf3 Server Card -->
+                    <div class="card">
+                        <h3>🚀 iPerf3 Speed Test Daemon</h3>
+                        <p class="card-desc">Toggle the built-in iPerf3 server. Allows testing LAN speeds from your laptop or phone.</p>
+                        <div class="form-group-row-2">
+                            <div class="form-item">
+                                <span class="status-msg">iPerf3 Port: <strong>5201</strong></span>
+                            </div>
+                            <div class="form-item align-end">
+                                <button id="toggle-iperf-btn" class="btn btn-secondary">Enable iPerf3 Server</button>
+                            </div>
+                        </div>
+                        <div id="iperf-status-text" class="status-msg margin-top-sm">Server status: Deactivated</div>
+                    </div>
+                </div>
+
+                <div class="card margin-top">
+                    <h3>🎬 Remote AV Controller</h3>
+                    <p class="card-desc">Direct control for PJLink enabled displays/projectors and Wake-on-LAN client systems.</p>
+                    <div class="grid-2-col">
+                        <!-- PJLink -->
+                        <div>
+                            <h4>Projector Control (PJLink)</h4>
+                            <div class="form-group margin-top-sm">
+                                <label for="pjlink-ip">Projector IP:</label>
+                                <input type="text" id="pjlink-ip" placeholder="e.g. 192.168.1.50">
+                            </div>
+                            <div class="form-group">
+                                <label for="pjlink-cmd-select">Command:</label>
+                                <select id="pjlink-cmd-select">
+                                    <option value="%1POWR 1">Power ON</option>
+                                    <option value="%1POWR 0">Power OFF</option>
+                                    <option value="%1LAMP ?">Query Lamp Hours</option>
+                                    <option value="%1AVMT 30">Mute Video/Audio ON</option>
+                                    <option value="%1AVMT 31">Mute Video/Audio OFF</option>
+                                    <option value="%1INPT ?">Query Active Input</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="pjlink-password">Password (Optional):</label>
+                                <input type="password" id="pjlink-password" placeholder="Leave blank if no auth">
+                            </div>
+                            <button id="send-pjlink-btn" class="btn btn-primary margin-top-sm">Send PJLink Command</button>
+                            <div id="pjlink-output" class="console-box margin-top-sm" style="height: 100px; color: var(--accent);">
+                                <div class="console-line system-line">Waiting for PJLink command submission...</div>
+                            </div>
+                        </div>
+
+                        <!-- Wake-on-LAN -->
+                        <div>
+                            <h4>Wake-on-LAN (WoL)</h4>
+                            <div class="form-group margin-top-sm">
+                                <label for="wol-mac">Target MAC Address:</label>
+                                <input type="text" id="wol-mac" placeholder="e.g. 00:11:22:33:44:55">
+                            </div>
+                            <button id="send-wol-btn" class="btn btn-primary margin-top-sm">Send Wake Magic Packet</button>
+                            <div id="wol-output" class="status-msg margin-top">Status: Idle</div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- TAB 3: USB SERIAL BRIDGE -->

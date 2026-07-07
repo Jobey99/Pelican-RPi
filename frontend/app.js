@@ -10,10 +10,13 @@ document.addEventListener("DOMContentLoaded", () => {
     initNetworkManager();
     initActiveProbes();
     initSerialControls();
+    initDhcpAndIperf();
+    initAvControls();
     
     // Initial fetch of configuration details
     fetchInterfaces();
     fetchSerialStatus();
+    fetchIperfStatus();
     
     // Poll active interface listings periodically
     interfacePollInterval = setInterval(fetchInterfaces, 5000);
@@ -560,3 +563,158 @@ function openConfigModal(interfaceName) {
     document.getElementById("modal-static-fields").classList.add("hidden");
     document.getElementById("config-modal").classList.remove("hidden");
 }
+
+// --- DHCP & IPERF3 MODULE ---
+function initDhcpAndIperf() {
+    const dhcpBtn = document.getElementById("run-dhcp-test-btn");
+    const dhcpBody = document.getElementById("dhcp-test-body");
+    const toggleIperfBtn = document.getElementById("toggle-iperf-btn");
+
+    dhcpBtn.addEventListener("click", () => {
+        const iface = document.getElementById("sniffer-interface-select").value;
+        dhcpBtn.disabled = true;
+        dhcpBtn.innerText = "Scanning DHCP...";
+        dhcpBody.innerHTML = `<tr><td colspan="5" class="text-center">Sending DHCP discover packets...</td></tr>`;
+
+        fetch(API_BASE + "/api/dhcp/test", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ interface: iface })
+        })
+        .then(r => r.json())
+        .then(data => {
+            dhcpBtn.disabled = false;
+            dhcpBtn.innerText = "Scan DHCP Servers";
+            if (data.servers && data.servers.length > 0) {
+                dhcpBody.innerHTML = data.servers.map(srv => `
+                    <tr>
+                        <td class="font-mono"><strong>${srv.server_ip}</strong></td>
+                        <td class="font-mono">${srv.subnet_mask}</td>
+                        <td class="font-mono">${srv.gateway}</td>
+                        <td>${srv.dns.join(", ")}</td>
+                        <td class="font-mono">${srv.lease_time}</td>
+                    </tr>
+                `).join("");
+            } else {
+                dhcpBody.innerHTML = `<tr><td colspan="5" class="text-center text-warning">⚠️ No DHCP offers received. Subnet is likely fully static.</td></tr>`;
+            }
+        })
+        .catch(err => {
+            dhcpBtn.disabled = false;
+            dhcpBtn.innerText = "Scan DHCP Servers";
+            dhcpBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error: ${err}</td></tr>`;
+        });
+    });
+
+    toggleIperfBtn.addEventListener("click", () => {
+        const isCurrentlyRunning = toggleIperfBtn.classList.contains("btn-danger");
+        toggleIperfBtn.disabled = true;
+
+        fetch(API_BASE + "/api/iperf/control", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ active: !isCurrentlyRunning })
+        })
+        .then(r => r.json())
+        .then(() => {
+            fetchIperfStatus();
+        })
+        .catch(err => alert("iPerf3 control failed: " + err))
+        .finally(() => {
+            toggleIperfBtn.disabled = false;
+        });
+    });
+}
+
+function fetchIperfStatus() {
+    fetch(API_BASE + "/api/iperf/status")
+        .then(r => r.json())
+        .then(data => {
+            const toggleIperfBtn = document.getElementById("toggle-iperf-btn");
+            const iperfStatusText = document.getElementById("iperf-status-text");
+
+            if (data.running) {
+                toggleIperfBtn.innerText = "Disable iPerf3 Server";
+                toggleIperfBtn.className = "btn btn-danger";
+                iperfStatusText.innerText = `Server active: Listening for bandwidth tests on Port ${data.port}`;
+                iperfStatusText.className = "status-msg text-success";
+            } else {
+                toggleIperfBtn.innerText = "Enable iPerf3 Server";
+                toggleIperfBtn.className = "btn btn-secondary";
+                iperfStatusText.innerText = "Server status: Deactivated";
+                iperfStatusText.className = "status-msg text-muted";
+            }
+        });
+}
+
+// --- AV CONTROLS ---
+function initAvControls() {
+    const sendPjlinkBtn = document.getElementById("send-pjlink-btn");
+    const pjlinkOutput = document.getElementById("pjlink-output");
+    
+    sendPjlinkBtn.addEventListener("click", () => {
+        const ip = document.getElementById("pjlink-ip").value.trim();
+        const cmd = document.getElementById("pjlink-cmd-select").value;
+        const pwd = document.getElementById("pjlink-password").value;
+
+        if (!ip) {
+            alert("Please enter target projector IP");
+            return;
+        }
+
+        sendPjlinkBtn.disabled = true;
+        pjlinkOutput.innerHTML = `<div class="console-line system-line">Connecting to projector and sending command...</div>`;
+
+        fetch(API_BASE + "/api/control/pjlink", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ip: ip, command: cmd, password: pwd || null })
+        })
+        .then(r => r.json())
+        .then(data => {
+            sendPjlinkBtn.disabled = false;
+            pjlinkOutput.innerHTML = `
+                <div class="console-line text-success">> Command Sent: ${cmd}</div>
+                <div class="console-line system-line">Projector Banner: ${data.greeting}</div>
+                <div class="console-line">Response: ${data.response}</div>
+            `;
+        })
+        .catch(err => {
+            sendPjlinkBtn.disabled = false;
+            pjlinkOutput.innerHTML = `<div class="console-line text-danger">> Error: ${err}</div>`;
+        });
+    });
+
+    const sendWolBtn = document.getElementById("send-wol-btn");
+    const wolOutput = document.getElementById("wol-output");
+
+    sendWolBtn.addEventListener("click", () => {
+        const mac = document.getElementById("wol-mac").value.trim();
+        if (!mac) {
+            alert("Please enter target MAC address");
+            return;
+        }
+
+        sendWolBtn.disabled = true;
+        wolOutput.className = "status-msg text-muted";
+        wolOutput.innerText = "Sending magic packet...";
+
+        fetch(API_BASE + "/api/control/wol", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mac: mac })
+        })
+        .then(r => r.json())
+        .then(data => {
+            sendWolBtn.disabled = false;
+            wolOutput.className = "status-msg text-success";
+            wolOutput.innerText = data.message;
+        })
+        .catch(err => {
+            sendWolBtn.disabled = false;
+            wolOutput.className = "status-msg text-danger";
+            wolOutput.innerText = "Error: " + err;
+        });
+    });
+}
+

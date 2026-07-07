@@ -27,6 +27,12 @@ if [ $? -ne 0 ]; then
     pip3 install -r requirements.txt --break-system-packages || pip3 install -r requirements.txt
 fi
 
+# Check and install iperf3 if missing
+if ! command -v iperf3 &> /dev/null; then
+    echo "💾 iPerf3 missing. Installing package..."
+    apt-get update && apt-get install -y iperf3
+fi
+
 # Set raw socket capabilities for python3 if not running as root (though sudo is safer)
 # setcap cap_net_raw,cap_net_admin=eip $(readlink -f $(which python3))
 
