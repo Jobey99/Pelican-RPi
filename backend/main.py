@@ -378,6 +378,7 @@ def download_site_commission_report(client: str = "Default Project", tech: str =
     
     ping_status = ping_monitor.get_status()
     devices = sniffer.get_results()
+    conflicts = conflict_detector.get_conflicts()
     
     # Generate standalone print-ready HTML
     report_html = generate_commissioning_report(
@@ -387,7 +388,8 @@ def download_site_commission_report(client: str = "Default Project", tech: str =
         lldp_info=lldp_info,
         diag_info=diag_info,
         ping_status=ping_status,
-        devices=devices
+        devices=devices,
+        conflicts=conflicts
     )
     
     return HTMLResponse(

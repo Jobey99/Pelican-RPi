@@ -247,6 +247,44 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </tbody>
     </table>
 
+    <h2>✅ Automated Site Commissioning Checklist</h2>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Verification Test</th>
+                <th>Measured Parameter</th>
+                <th>Acceptance Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>IP Address Conflict Scan</strong></td>
+                <td>{checklist_conflict_param}</td>
+                <td>{checklist_conflict_status}</td>
+            </tr>
+            <tr>
+                <td><strong>Physical Link Negotiation</strong></td>
+                <td>{checklist_link_param}</td>
+                <td>{checklist_link_status}</td>
+            </tr>
+            <tr>
+                <td><strong>Local DNS Health Lookup</strong></td>
+                <td>{checklist_dns_param}</td>
+                <td>{checklist_dns_status}</td>
+            </tr>
+            <tr>
+                <td><strong>QoS Ping Stability</strong></td>
+                <td>{checklist_ping_param}</td>
+                <td>{checklist_ping_status}</td>
+            </tr>
+            <tr>
+                <td><strong>Switch Port Discovery (LLDP/CDP)</strong></td>
+                <td>{checklist_lldp_param}</td>
+                <td>{checklist_lldp_status}</td>
+            </tr>
+        </tbody>
+    </table>
+
     <h2>📝 Commissioning Notes</h2>
     <div class="notes-area">
         {notes}
@@ -262,22 +300,42 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     </div>
 </body>
 </html>
+
 """
 
 def generate_commissioning_report(client_name: str, technician: str, notes: str, 
                                   lldp_info: dict, diag_info: dict, ping_status: dict, 
-                                  devices: list, hostname: str = "RPi4-JumpBox") -> str:
+                                  devices: list, conflicts: list = None, hostname: str = "RPi4-JumpBox") -> str:
     """
     Interpolates active diagnostic databases into a print-friendly commissioning report.
     """
     date_str = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
     
+    if conflicts is None:
+        conflicts = []
+
+    # Calculate Checklist fields
+    # 1. IP Conflict
+    checklist_conflict_param = f"{len(conflicts)} IP conflict(s) active"
+    if len(conflicts) == 0:
+        checklist_conflict_status = '<span class="badge badge-success">PASS</span>'
+    else:
+        checklist_conflict_status = '<span class="badge badge-danger">FAIL</span>'
+
     # LLDP details
     lldp_switch = lldp_info.get("switch_name", "Not Detected")
     lldp_port = lldp_info.get("port_id", "Not Detected")
     lldp_vlan = lldp_info.get("vlan", "Not Detected")
     lldp_ip = lldp_info.get("ip", "Not Detected")
     lldp_proto = lldp_info.get("protocol", "Not Detected")
+
+    # 2. Switch Discovery
+    if lldp_proto and lldp_proto != "Not Detected" and lldp_proto != "None" and lldp_proto != "Listening...":
+        checklist_lldp_param = f"Switch: {lldp_switch} | Port: {lldp_port}"
+        checklist_lldp_status = '<span class="badge badge-success">PASS</span>'
+    else:
+        checklist_lldp_param = "No switch LLDP/CDP packets detected"
+        checklist_lldp_status = '<span class="badge badge-warning">BYPASS (No LLDP)</span>'
 
     # Diagnostics details
     iface = diag_info.get("interface", "eth0")
@@ -291,6 +349,25 @@ def generate_commissioning_report(client_name: str, technician: str, notes: str,
     dns_latency = "Failed"
     if dns.get("success"):
         dns_latency = f"{dns.get('latency_ms')} ms"
+
+    # 3. Physical Link
+    if not cable.get("success"):
+        checklist_link_param = "Physical link diagnostics not run"
+        checklist_link_status = '<span class="badge badge-danger">FAIL (Not Audited)</span>'
+    elif cable.get("warning"):
+        checklist_link_param = f"Negotiated: {speed_duplex} ({cable.get('warning_message')})"
+        checklist_link_status = '<span class="badge badge-warning">WARN</span>'
+    else:
+        checklist_link_param = f"Negotiated: {speed_duplex} (healthy)"
+        checklist_link_status = '<span class="badge badge-success">PASS</span>'
+
+    # 4. DNS health
+    if dns.get("success"):
+        checklist_dns_param = f"Resolved google.com in {dns_latency}"
+        checklist_dns_status = '<span class="badge badge-success">PASS</span>'
+    else:
+        checklist_dns_param = "DNS resolution failed or timed out"
+        checklist_dns_status = '<span class="badge badge-danger">FAIL</span>'
 
     # Link warning badge
     if not cable.get("success"):
@@ -307,6 +384,19 @@ def generate_commissioning_report(client_name: str, technician: str, notes: str,
     ping_loss_pct = ping_status.get("loss_percent", 0.0)
     ping_avg = ping_status.get("avg_rtt", 0.0)
     
+    # 5. QoS Ping checklist status
+    if ping_sent > 0:
+        checklist_ping_param = f"{ping_loss_pct}% loss | Avg latency: {ping_avg} ms"
+        if ping_loss_pct < 2:
+            checklist_ping_status = '<span class="badge badge-success">PASS</span>'
+        elif ping_loss_pct < 5:
+            checklist_ping_status = '<span class="badge badge-warning">WARN</span>'
+        else:
+            checklist_ping_status = '<span class="badge badge-danger">FAIL</span>'
+    else:
+        checklist_ping_param = "Ping QoS logger was not running"
+        checklist_ping_status = '<span class="badge badge-warning">BYPASS (Not Logged)</span>'
+
     # Render Sparkline
     sparkline_html = ""
     history = ping_status.get("history", [])
@@ -382,5 +472,15 @@ def generate_commissioning_report(client_name: str, technician: str, notes: str,
         sparkline_html=sparkline_html,
         device_count=len(devices),
         discovered_devices_rows=devices_rows,
+        checklist_conflict_param=checklist_conflict_param,
+        checklist_conflict_status=checklist_conflict_status,
+        checklist_link_param=checklist_link_param,
+        checklist_link_status=checklist_link_status,
+        checklist_dns_param=checklist_dns_param,
+        checklist_dns_status=checklist_dns_status,
+        checklist_ping_param=checklist_ping_param,
+        checklist_ping_status=checklist_ping_status,
+        checklist_lldp_param=checklist_lldp_param,
+        checklist_lldp_status=checklist_lldp_status,
         notes=notes
     )
