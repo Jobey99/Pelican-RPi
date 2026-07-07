@@ -282,6 +282,11 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 <td>{checklist_lldp_param}</td>
                 <td>{checklist_lldp_status}</td>
             </tr>
+            <tr>
+                <td><strong>DHCP Server Security Audit</strong></td>
+                <td>{checklist_dhcp_param}</td>
+                <td>{checklist_dhcp_status}</td>
+            </tr>
         </tbody>
     </table>
 
@@ -305,7 +310,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
 def generate_commissioning_report(client_name: str, technician: str, notes: str, 
                                   lldp_info: dict, diag_info: dict, ping_status: dict, 
-                                  devices: list, conflicts: list = None, hostname: str = "RPi4-JumpBox") -> str:
+                                  devices: list, conflicts: list = None, dhcp_info: dict = None, hostname: str = "RPi4-JumpBox") -> str:
     """
     Interpolates active diagnostic databases into a print-friendly commissioning report.
     """
@@ -313,6 +318,21 @@ def generate_commissioning_report(client_name: str, technician: str, notes: str,
     
     if conflicts is None:
         conflicts = []
+
+    # Calculate DHCP Server Checklist status
+    dhcp_success = (dhcp_info or {}).get("success", False)
+    dhcp_servers = (dhcp_info or {}).get("servers", [])
+    if dhcp_success and len(dhcp_servers) > 0:
+        server_ips = ", ".join([srv.get("server_ip", "") for srv in dhcp_servers])
+        if len(dhcp_servers) == 1:
+            checklist_dhcp_param = f"1 DHCP server active ({server_ips})"
+            checklist_dhcp_status = '<span class="badge badge-success">PASS</span>'
+        else:
+            checklist_dhcp_param = f"Rogue DHCP conflict! ({len(dhcp_servers)} active: {server_ips})"
+            checklist_dhcp_status = '<span class="badge badge-danger">FAIL (Rogue Server)</span>'
+    else:
+        checklist_dhcp_param = "No DHCP offers received. Subnet is likely static."
+        checklist_dhcp_status = '<span class="badge badge-warning">WARN (Static Subnet)</span>'
 
     # Calculate Checklist fields
     # 1. IP Conflict
@@ -482,5 +502,7 @@ def generate_commissioning_report(client_name: str, technician: str, notes: str,
         checklist_ping_status=checklist_ping_status,
         checklist_lldp_param=checklist_lldp_param,
         checklist_lldp_status=checklist_lldp_status,
+        checklist_dhcp_param=checklist_dhcp_param,
+        checklist_dhcp_status=checklist_dhcp_status,
         notes=notes
     )

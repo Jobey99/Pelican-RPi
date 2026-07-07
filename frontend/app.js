@@ -1094,7 +1094,7 @@ function initPhase4Features() {
                 statusText.innerText = text;
             };
 
-            // 1. Switch Discovery (10% -> 30%)
+            // 1. Switch Discovery (0% -> 15%)
             updateProgress(10, "Querying LLDP/CDP managed switch metadata...");
             
             fetch(API_BASE + "/api/network/lldp")
@@ -1103,9 +1103,9 @@ function initPhase4Features() {
                 const lldpPassed = lldp.protocol && lldp.protocol !== "None" && lldp.protocol !== "Listening...";
                 const lldpItem = `<div>${lldpPassed ? "✅" : "⚠️"} Switch Discovery: ${lldpPassed ? `Connected to ${lldp.switch_name} on Port ${lldp.port_id}` : "No LLDP/CDP packets detected (Bypassed)"}</div>`;
 
-                // 2. Link & DNS Diagnostics (30% -> 60%)
+                // 2. Link & DNS Diagnostics (15% -> 35%)
                 setTimeout(() => {
-                    updateProgress(40, "Auditing physical cable negotiation and local DNS lookup latency...");
+                    updateProgress(30, "Auditing physical cable negotiation and local DNS lookup latency...");
                     
                     fetch(API_BASE + "/api/network/diagnostics", {
                         method: "POST",
@@ -1120,46 +1120,82 @@ function initPhase4Features() {
                         const dnsPassed = diag.dns.success;
                         const dnsItem = `<div>${dnsPassed ? "✅" : "❌"} DNS Health Lookup: ${dnsPassed ? `${diag.dns.latency_ms} ms` : "Failed or timed out"}</div>`;
 
-                        // 3. ARP Conflicts (60% -> 80%)
+                        // 3. DHCP Server Security Audit (35% -> 55%)
                         setTimeout(() => {
-                            updateProgress(70, "Scanning subnet for IP address conflicts...");
+                            updateProgress(50, "Probing subnet for active DHCP servers and rogue leases...");
                             
-                            fetch(API_BASE + "/api/network/conflicts")
+                            fetch(API_BASE + "/api/scan/dhcp", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ interface: selectedIface })
+                            })
                             .then(r => r.json())
-                            .then(conflicts => {
-                                const conflictPassed = conflicts.length === 0;
-                                const conflictItem = `<div>${conflictPassed ? "✅" : "❌"} IP Conflict Scan: ${conflictPassed ? "0 IP conflicts detected" : `${conflicts.length} conflict(s) active`}</div>`;
+                            .then(dhcp => {
+                                const dhcpSuccess = dhcp.success;
+                                const dhcpServers = dhcp.servers || [];
+                                let dhcpItem = "";
+                                if (dhcpSuccess && dhcpServers.length > 0) {
+                                    const serverIps = dhcpServers.map(s => s.server_ip).join(", ");
+                                    if (dhcpServers.length === 1) {
+                                        dhcpItem = `<div>✅ DHCP Server Audit: 1 active server detected (${serverIps})</div>`;
+                                    } else {
+                                        dhcpItem = `<div>❌ DHCP Server Audit: Rogue DHCP servers detected! (${dhcpServers.length} active: ${serverIps})</div>`;
+                                    }
+                                } else {
+                                    dhcpItem = `<div>⚠️ DHCP Server Audit: No DHCP offers received. Subnet is static.</div>`;
+                                }
 
-                                // 4. QoS Ping (80% -> 100%)
+                                // 4. IP Conflicts (55% -> 75%)
                                 setTimeout(() => {
-                                    updateProgress(90, "Retrieving QoS ping loss statistics...");
+                                    updateProgress(70, "Scanning link for active IP address conflicts...");
                                     
-                                    fetch(API_BASE + "/api/ping/monitor/status")
+                                    fetch(API_BASE + "/api/network/conflicts")
                                     .then(r => r.json())
-                                    .then(ping => {
-                                        const pingLogged = ping.sent > 0;
-                                        const pingPassed = pingLogged && ping.loss_percent < 2;
-                                        const pingItem = `<div>${pingLogged ? (pingPassed ? "✅" : "⚠️") : "⚠️"} QoS Packet Stability: ${pingLogged ? `${ping.loss_percent}% packet loss (Avg: ${ping.avg_rtt} ms)` : "Ping logger not running (Bypassed)"}</div>`;
+                                    .then(conflicts => {
+                                        const conflictPassed = conflicts.length === 0;
+                                        const conflictItem = `<div>${conflictPassed ? "✅" : "❌"} IP Conflict Scan: ${conflictPassed ? "0 IP conflicts detected" : `${conflicts.length} conflict(s) active`}</div>`;
 
-                                        // 5. Completion (100%)
+                                        // 5. Active QoS Ping Test (8 packets) (75% -> 95%)
                                         setTimeout(() => {
-                                            updateProgress(100, "Verification sweep complete!");
+                                            updateProgress(85, "Executing live 8-packet QoS ping diagnostic...");
                                             
-                                            // Render checklist results
-                                            resultsBox.innerHTML = `
-                                                <div style="font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; color: var(--accent);">📊 AUTOMATED SITE VERIFICATION RESULTS:</div>
-                                                ${lldpItem}
-                                                ${linkItem}
-                                                ${dnsItem}
-                                                ${conflictItem}
-                                                ${pingItem}
-                                            `;
-                                            resultsBox.classList.remove("hidden");
-                                            
-                                            // Enable download and restore sweep button
-                                            generateReportBtn.disabled = false;
-                                            runSweepBtn.disabled = false;
-                                        }, 400);
+                                            fetch(API_BASE + "/api/ping/test", {
+                                                method: "POST",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ target: "8.8.8.8", count: 8, interface: selectedIface })
+                                            })
+                                            .then(r => r.json())
+                                            .then(ping => {
+                                                const pingPassed = ping.success && ping.loss_percent < 2;
+                                                const pingItem = `<div>${ping.success ? (pingPassed ? "✅" : "❌") : "❌"} QoS Ping Stability: ${ping.success ? `${ping.loss_percent}% packet loss (Avg: ${ping.avg_rtt} ms)` : `Ping test failed: ${ping.error}`}</div>`;
+
+                                                // 6. Completion (100%)
+                                                setTimeout(() => {
+                                                    updateProgress(100, "Verification sweep complete!");
+                                                    
+                                                    // Render checklist results
+                                                    resultsBox.innerHTML = `
+                                                        <div style="font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; color: var(--accent);">📊 AUTOMATED SITE VERIFICATION RESULTS:</div>
+                                                        ${lldpItem}
+                                                        ${linkItem}
+                                                        ${dnsItem}
+                                                        ${dhcpItem}
+                                                        ${conflictItem}
+                                                        ${pingItem}
+                                                    `;
+                                                    resultsBox.classList.remove("hidden");
+                                                    
+                                                    // Enable download and restore sweep button
+                                                    generateReportBtn.disabled = false;
+                                                    runSweepBtn.disabled = false;
+                                                }, 400);
+                                            })
+                                            .catch(err => {
+                                                updateProgress(100, "Ping test failed!");
+                                                statusText.innerText = "Error running ping test: " + err;
+                                                runSweepBtn.disabled = false;
+                                            });
+                                        }, 600);
                                     });
                                 }, 600);
                             });

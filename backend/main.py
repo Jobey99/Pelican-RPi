@@ -99,6 +99,11 @@ class PingMonitorRequest(BaseModel):
     interface: str
     active: bool
 
+class PingTestRequest(BaseModel):
+    target: str
+    count: int = 8
+    interface: str
+
 
 # --- API ROUTES ---
 
@@ -328,6 +333,85 @@ def configure_ping_monitor(req: PingMonitorRequest):
         ping_monitor.stop()
         return {"success": True, "message": "Ping monitor stopped"}
 
+@app.post("/api/ping/test")
+def run_active_ping_test(req: PingTestRequest):
+    import subprocess
+    import platform
+    import re
+
+    # Formulate ping command based on OS
+    system_os = platform.system().lower()
+    if system_os == "windows":
+        cmd = ["ping", "-n", str(req.count), "-w", "1000", req.target]
+    else:
+        # Linux: bind to interface if provided
+        cmd = ["ping", "-c", str(req.count), "-W", "1"]
+        if req.interface and req.interface.strip():
+            cmd.extend(["-I", req.interface])
+        cmd.append(req.target)
+
+    try:
+        res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=12)
+        stdout = res.stdout or ""
+        
+        loss_pct = 100.0
+        avg_rtt = 0.0
+        sent = req.count
+        lost = req.count
+
+        if system_os == "windows":
+            # Match lost count
+            loss_match = re.search(r"Lost = (\d+) \((\d+)% loss\)", stdout)
+            if loss_match:
+                lost = int(loss_match.group(1))
+                loss_pct = float(loss_match.group(2))
+            # Match average RTT
+            rtt_match = re.search(r"Average = (\d+)ms", stdout)
+            if rtt_match:
+                avg_rtt = float(rtt_match.group(1))
+        else:
+            # Linux packet loss
+            loss_match = re.search(r"(\d+)% packet loss", stdout)
+            if loss_match:
+                loss_pct = float(loss_match.group(1))
+            # Linux received packets
+            rx_match = re.search(r"(\d+) received", stdout)
+            if rx_match:
+                rx = int(rx_match.group(1))
+                lost = max(0, sent - rx)
+            # Linux RTT
+            rtt_match = re.search(r"min/avg/max/(?:mdev|stddev) = [\d\.]+/([\d\.]+)/", stdout)
+            if rtt_match:
+                avg_rtt = float(rtt_match.group(1))
+
+        return {
+            "success": True,
+            "target": req.target,
+            "sent": sent,
+            "lost": lost,
+            "loss_percent": loss_pct,
+            "avg_rtt": round(avg_rtt, 2),
+            "output_snippet": stdout[-200:].strip()
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "success": False,
+            "error": "Ping test timed out",
+            "sent": req.count,
+            "lost": req.count,
+            "loss_percent": 100.0,
+            "avg_rtt": 0.0
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "sent": req.count,
+            "lost": req.count,
+            "loss_percent": 100.0,
+            "avg_rtt": 0.0
+        }
+
 @app.get("/api/ping/monitor/download")
 def download_ping_log():
     if os.path.exists(ping_monitor.log_file):
@@ -379,6 +463,7 @@ def download_site_commission_report(client: str = "Default Project", tech: str =
     ping_status = ping_monitor.get_status()
     devices = sniffer.get_results()
     conflicts = conflict_detector.get_conflicts()
+    dhcp_info = detect_dhcp_servers("eth0")
     
     # Generate standalone print-ready HTML
     report_html = generate_commissioning_report(
@@ -389,7 +474,8 @@ def download_site_commission_report(client: str = "Default Project", tech: str =
         diag_info=diag_info,
         ping_status=ping_status,
         devices=devices,
-        conflicts=conflicts
+        conflicts=conflicts,
+        dhcp_info=dhcp_info
     )
     
     return HTMLResponse(
