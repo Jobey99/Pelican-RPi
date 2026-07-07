@@ -1072,6 +1072,109 @@ function initPhase4Features() {
         });
     }
 
+    const runSweepBtn = document.getElementById("run-verification-sweep-btn");
+    if (runSweepBtn) {
+        runSweepBtn.addEventListener("click", () => {
+            const testArea = document.getElementById("report-test-area");
+            const progressBar = document.getElementById("verification-progress-bar");
+            const progressPct = document.getElementById("verification-progress-pct");
+            const statusText = document.getElementById("verification-status-text");
+            const resultsBox = document.getElementById("verification-checklist-results");
+            const selectedIface = document.getElementById("sniffer-interface-select").value;
+
+            runSweepBtn.disabled = true;
+            generateReportBtn.disabled = true;
+            testArea.classList.remove("hidden");
+            resultsBox.classList.add("hidden");
+            resultsBox.innerHTML = "";
+
+            const updateProgress = (percentage, text) => {
+                progressBar.style.width = percentage + "%";
+                progressPct.innerText = percentage + "%";
+                statusText.innerText = text;
+            };
+
+            // 1. Switch Discovery (10% -> 30%)
+            updateProgress(10, "Querying LLDP/CDP managed switch metadata...");
+            
+            fetch(API_BASE + "/api/network/lldp")
+            .then(r => r.json())
+            .then(lldp => {
+                const lldpPassed = lldp.protocol && lldp.protocol !== "None" && lldp.protocol !== "Listening...";
+                const lldpItem = `<div>${lldpPassed ? "✅" : "⚠️"} Switch Discovery: ${lldpPassed ? `Connected to ${lldp.switch_name} on Port ${lldp.port_id}` : "No LLDP/CDP packets detected (Bypassed)"}</div>`;
+
+                // 2. Link & DNS Diagnostics (30% -> 60%)
+                setTimeout(() => {
+                    updateProgress(40, "Auditing physical cable negotiation and local DNS lookup latency...");
+                    
+                    fetch(API_BASE + "/api/network/diagnostics", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ interface: selectedIface })
+                    })
+                    .then(r => r.json())
+                    .then(diag => {
+                        const linkPassed = diag.cable.success && !diag.cable.warning;
+                        const linkItem = `<div>${linkPassed ? "✅" : "⚠️"} Link Negotiation: ${diag.cable.success ? `${diag.cable.speed} / ${diag.cable.duplex}` : "Not audited"}</div>`;
+                        
+                        const dnsPassed = diag.dns.success;
+                        const dnsItem = `<div>${dnsPassed ? "✅" : "❌"} DNS Health Lookup: ${dnsPassed ? `${diag.dns.latency_ms} ms` : "Failed or timed out"}</div>`;
+
+                        // 3. ARP Conflicts (60% -> 80%)
+                        setTimeout(() => {
+                            updateProgress(70, "Scanning subnet for IP address conflicts...");
+                            
+                            fetch(API_BASE + "/api/network/conflicts")
+                            .then(r => r.json())
+                            .then(conflicts => {
+                                const conflictPassed = conflicts.length === 0;
+                                const conflictItem = `<div>${conflictPassed ? "✅" : "❌"} IP Conflict Scan: ${conflictPassed ? "0 IP conflicts detected" : `${conflicts.length} conflict(s) active`}</div>`;
+
+                                // 4. QoS Ping (80% -> 100%)
+                                setTimeout(() => {
+                                    updateProgress(90, "Retrieving QoS ping loss statistics...");
+                                    
+                                    fetch(API_BASE + "/api/ping/monitor/status")
+                                    .then(r => r.json())
+                                    .then(ping => {
+                                        const pingLogged = ping.sent > 0;
+                                        const pingPassed = pingLogged && ping.loss_percent < 2;
+                                        const pingItem = `<div>${pingLogged ? (pingPassed ? "✅" : "⚠️") : "⚠️"} QoS Packet Stability: ${pingLogged ? `${ping.loss_percent}% packet loss (Avg: ${ping.avg_rtt} ms)` : "Ping logger not running (Bypassed)"}</div>`;
+
+                                        // 5. Completion (100%)
+                                        setTimeout(() => {
+                                            updateProgress(100, "Verification sweep complete!");
+                                            
+                                            // Render checklist results
+                                            resultsBox.innerHTML = `
+                                                <div style="font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; color: var(--accent);">📊 AUTOMATED SITE VERIFICATION RESULTS:</div>
+                                                ${lldpItem}
+                                                ${linkItem}
+                                                ${dnsItem}
+                                                ${conflictItem}
+                                                ${pingItem}
+                                            `;
+                                            resultsBox.classList.remove("hidden");
+                                            
+                                            // Enable download and restore sweep button
+                                            generateReportBtn.disabled = false;
+                                            runSweepBtn.disabled = false;
+                                        }, 400);
+                                    });
+                                }, 600);
+                            });
+                        }, 600);
+                    });
+                }, 600);
+            })
+            .catch(err => {
+                updateProgress(100, "Verification sweep failed!");
+                statusText.innerText = "Error running verification sweep: " + err;
+                runSweepBtn.disabled = false;
+            });
+        });
+    }
+
     // Trigger topology redraw when Tab 3 is selected
     const navButtons = document.querySelectorAll(".nav-btn");
     navButtons.forEach(btn => {

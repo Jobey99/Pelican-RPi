@@ -616,8 +616,22 @@
                         <textarea id="report-notes" rows="6" placeholder="Document any custom VLAN mappings, IP blocks, serial bridge setups, or notes here..."></textarea>
                     </div>
                     
-                    <div class="margin-top">
-                        <button id="generate-report-btn" class="btn btn-primary">Generate Handover PDF Report</button>
+                    <div class="margin-top" style="display: flex; gap: 12px; align-items: center;">
+                        <button id="run-verification-sweep-btn" class="btn btn-secondary">Run Verification Sweep</button>
+                        <button id="generate-report-btn" class="btn btn-primary" disabled>Generate Handover PDF Report</button>
+                    </div>
+
+                    <div id="report-test-area" class="margin-top hidden">
+                        <h4 style="margin-bottom: 8px; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;">Diagnostic Test Progress: <span id="verification-progress-pct" style="color: var(--accent);">0%</span></h4>
+                        <div class="progress-bar-container" style="width: 100%; height: 12px; background: rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden; border: 1px solid var(--border-color); margin-bottom: 12px;">
+                            <div id="verification-progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), var(--secondary)); transition: width 0.3s ease-in-out; border-radius: 6px;"></div>
+                        </div>
+                        <div id="verification-status-text" class="status-msg text-muted" style="margin-bottom: 16px;">Initiating system verification sequence...</div>
+                        
+                        <!-- Test Checklist Results Display -->
+                        <div id="verification-checklist-results" class="form-group hidden" style="background: rgba(0,0,0,0.18); border: 1px solid var(--border-color); padding: 16px; border-radius: 8px; font-family: var(--font-mono); font-size: 0.88rem; line-height: 1.6;">
+                            <!-- populated by JS -->
+                        </div>
                     </div>
                 </div>
             </section>
