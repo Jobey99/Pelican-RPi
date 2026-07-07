@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pelican RPi Network Powerhouse</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="glass-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h2>PELICAN</h2>
+                <span>AV/IT JUMP BOX</span>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="dashboard-tab">
+                    <span class="icon">🔍</span> Passive Discovery
+                </button>
+                <button class="nav-btn" data-tab="active-tab">
+                    <span class="icon">⚡</span> Active Probes
+                </button>
+                <button class="nav-btn" data-tab="serial-tab">
+                    <span class="icon">🔌</span> USB Serial Bridge
+                </button>
+                <button class="nav-btn" data-tab="network-tab">
+                    <span class="icon">⚙️</span> Interface Manager
+                </button>
+            </nav>
+            <div class="sidebar-status">
+                <div class="status-item">
+                    <span>Host IP:</span>
+                    <span id="host-ip-display">Loading...</span>
+                </div>
+                <div class="status-item">
+                    <span>Sniffer:</span>
+                    <span id="sniffer-status-indicator" class="badge badge-off">Off</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Dashboard Content -->
+        <main class="content-area">
+            <!-- HEADER -->
+            <header class="main-header">
+                <h1 id="tab-title">Passive Network Auto-Discoverer</h1>
+                <div class="header-controls">
+                    <label for="sniffer-interface-select">Interface:</label>
+                    <select id="sniffer-interface-select">
+                        <option value="eth0">eth0 (Ethernet)</option>
+                    </select>
+                    <button id="toggle-sniffer-btn" class="btn btn-primary">Start Sniffing</button>
+                </div>
+            </header>
+
+            <!-- TAB 1: PASSIVE DISCOVERY -->
+            <section id="dashboard-tab" class="tab-content active">
+                <!-- Subnet Guesses -->
+                <div class="card subnet-suggestion-card">
+                    <h3>💡 Subnet Detections</h3>
+                    <p>Based on passive network chatter, we suggest the following subnets:</p>
+                    <div id="subnet-guesses-container" class="subnet-guesses-grid">
+                        <div class="no-subnets-msg">No subnets detected yet. Start sniffing and plug into a live network!</div>
+                    </div>
+                </div>
+
+                <!-- Discovered Devices Table -->
+                <div class="card device-list-card">
+                    <div class="card-header">
+                        <h3>Discovered Devices</h3>
+                        <button id="clear-sniffer-btn" class="btn btn-secondary btn-sm">Clear List</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>MAC Address</th>
+                                    <th>Manufacturer / Vendor</th>
+                                    <th>Detected Hostname</th>
+                                    <th>Seen via Protocols</th>
+                                    <th>Last Active</th>
+                                </tr>
+                            </thead>
+                            <tbody id="devices-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-center">Waiting for passive network traffic...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: ACTIVE PROBES -->
+            <section id="active-tab" class="tab-content">
+                <div class="grid-2-col">
+                    <!-- ARP Sweep Card -->
+                    <div class="card">
+                        <h3>Active Subnet Sweeper (ARP)</h3>
+                        <p class="card-desc">Send targeted ARP requests to map a discovered range. (Fast & Silent)</p>
+                        <div class="form-group row">
+                            <div class="form-item">
+                                <label for="arp-subnet-input">Subnet CIDR:</label>
+                                <input type="text" id="arp-subnet-input" placeholder="e.g. 192.168.1.0/24">
+                            </div>
+                            <div class="form-item align-end">
+                                <button id="run-arp-scan-btn" class="btn btn-primary">Sweep Subnet</button>
+                            </div>
+                        </div>
+                        <div class="table-responsive margin-top">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>IP Address</th>
+                                        <th>MAC Address</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="arp-scan-body">
+                                    <tr>
+                                        <td colspan="3" class="text-center">Enter a subnet range and click Sweep.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Port Prober Card -->
+                    <div class="card">
+                        <h3>AV & Control Port Prober</h3>
+                        <p class="card-desc">Probe a specific target IP for open automation & media services.</p>
+                        <div class="form-group row">
+                            <div class="form-item">
+                                <label for="probe-target-ip">Target IP:</label>
+                                <input type="text" id="probe-target-ip" placeholder="e.g. 192.168.1.10">
+                            </div>
+                            <div class="form-item align-end">
+                                <button id="run-port-probe-btn" class="btn btn-primary">Probe Ports</button>
+                            </div>
+                        </div>
+                        <div class="port-chips-grid margin-top">
+                            <div class="port-status-box" data-port="80"><span>HTTP (Port 80)</span><span class="p-status">Waiting</span></div>
+                            <div class="port-status-box" data-port="443"><span>HTTPS (Port 443)</span><span class="p-status">Waiting</span></div>
+                            <div class="port-status-box" data-port="23"><span>Telnet (Port 23)</span><span class="p-status">Waiting</span></div>
+                            <div class="port-status-box" data-port="22"><span>SSH (Port 22)</span><span class="p-status">Waiting</span></div>
+                            <div class="port-status-box" data-port="41794"><span>Crestron (Port 41794)</span><span class="p-status">Waiting</span></div>
+                            <div class="port-status-box" data-port="5900"><span>VNC / Remote (Port 5900)</span><span class="p-status">Waiting</span></div>
+                            <div class="port-status-box" data-port="49152"><span>PJLink (Port 49152)</span><span class="p-status">Waiting</span></div>
+                            <div class="port-status-box" data-port="8080"><span>Admin UI (Port 8080)</span><span class="p-status">Waiting</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: USB SERIAL BRIDGE -->
+            <section id="serial-tab" class="tab-content">
+                <div class="grid-serial">
+                    <!-- Serial Settings & TCP Bridge Controls -->
+                    <div class="card">
+                        <h3>🔌 Serial Port Setup</h3>
+                        <div class="form-group">
+                            <label for="serial-port-select">USB Serial Device:</label>
+                            <select id="serial-port-select">
+                                <option value="">No adapters found. Refresh.</option>
+                            </select>
+                        </div>
+                        <div class="form-group-row-2">
+                            <div class="form-item">
+                                <label for="serial-baud-select">Baud Rate:</label>
+                                <select id="serial-baud-select">
+                                    <option value="9600" selected>9600</option>
+                                    <option value="19200">19200</option>
+                                    <option value="38400">38400</option>
+                                    <option value="57600">57600</option>
+                                    <option value="115200">115200</option>
+                                </select>
+                            </div>
+                            <div class="form-item flex-row align-end">
+                                <button id="connect-serial-btn" class="btn btn-primary full-width">Connect</button>
+                                <button id="disconnect-serial-btn" class="btn btn-danger hidden">Disconnect</button>
+                            </div>
+                        </div>
+
+                        <hr class="divider">
+
+                        <h3>🌐 Network Telnet Bridge</h3>
+                        <p class="card-desc">Forward a local TCP socket directly to the connected serial port. Allows software (Crestron/Q-SYS) to target the RPi4's IP to interact with hardware serial.</p>
+                        
+                        <div class="form-group-row-2 margin-top-sm">
+                            <div class="form-item">
+                                <label for="bridge-tcp-port">TCP Server Port:</label>
+                                <input type="number" id="bridge-tcp-port" value="23" min="1" max="65535">
+                            </div>
+                            <div class="form-item align-end">
+                                <button id="toggle-bridge-btn" class="btn btn-secondary full-width">Enable TCP Bridge</button>
+                            </div>
+                        </div>
+                        <div id="bridge-status-text" class="status-msg margin-top-sm">Bridge status: Deactivated</div>
+                    </div>
+
+                    <!-- Web Terminal Console -->
+                    <div class="card console-card">
+                        <div class="card-header">
+                            <h3>RS232 Diagnostic Console</h3>
+                            <button id="clear-console-btn" class="btn btn-secondary btn-sm">Clear</button>
+                        </div>
+                        <div id="console-output" class="console-box">
+                            <div class="console-line system-line">> Console ready. Connect to a serial device to start transmitting.</div>
+                        </div>
+                        <div class="console-input-row">
+                            <input type="text" id="console-input" placeholder="Type serial command here (Press Enter to send)..." disabled>
+                            <button id="send-console-btn" class="btn btn-primary" disabled>Send</button>
+                        </div>
+                        <div class="console-settings-row">
+                            <label><input type="checkbox" id="console-append-cr" checked> Append CR (\r)</label>
+                            <label><input type="checkbox" id="console-append-lf" checked> Append LF (\n)</label>
+                            <label><input type="checkbox" id="console-hex-mode"> Send Hex</label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: INTERFACE MANAGER -->
+            <section id="network-tab" class="tab-content">
+                <div class="card">
+                    <h3>⚙️ Linux Interface Management</h3>
+                    <p class="card-desc">List active network ports. Temporarily configure IP configurations to matching legacy subnets without logging out.</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Interface</th>
+                                    <th>Logical Status</th>
+                                    <th>IP / CIDR</th>
+                                    <th>MAC Address</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="interfaces-table-body">
+                                <tr>
+                                    <td colspan="5" class="text-center">Loading network interfaces...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Network Config Modals (embedded in page for simplicity) -->
+                <div id="config-modal" class="modal hidden">
+                    <div class="modal-content">
+                        <h3>Configure Interface: <span id="modal-interface-name">eth0</span></h3>
+                        <div class="form-group margin-top">
+                            <label for="modal-ip-mode">Addressing Mode:</label>
+                            <select id="modal-ip-mode">
+                                <option value="dhcp">DHCP (Auto Client)</option>
+                                <option value="static">Static (Manual IP)</option>
+                            </select>
+                        </div>
+                        <div id="modal-static-fields" class="hidden">
+                            <div class="form-group">
+                                <label for="modal-static-ip">Static IP Address with CIDR:</label>
+                                <input type="text" id="modal-static-ip" placeholder="e.g. 192.168.12.99/24">
+                                <small class="text-muted">Ensure to input the CIDR suffix (e.g. /24 for 255.255.255.0)</small>
+                            </div>
+                        </div>
+                        <div class="modal-actions margin-top">
+                            <button id="close-modal-btn" class="btn btn-secondary">Cancel</button>
+                            <button id="apply-network-btn" class="btn btn-primary">Apply Settings</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
