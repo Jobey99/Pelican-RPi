@@ -1,6 +1,6 @@
 import uuid
 import random
-from scapy.all import Ether, IP, UDP, BOOTP, DHCP, srp, get_if_raw_hwaddr
+from scapy.all import Ether, IP, UDP, BOOTP, DHCP, srp, get_if_hwaddr
 # Import logging to suppress warnings if scapy complains
 import logging
 logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
@@ -11,9 +11,9 @@ def detect_dhcp_servers(interface: str, timeout: int = 3):
     and listens for DHCP Offer replies. Returns a list of found DHCP servers.
     """
     try:
-        # Get raw MAC address of the interface
-        raw_mac = get_if_raw_hwaddr(interface)[1]
-        mac_str = ":".join(f"{b:02x}" for b in raw_mac)
+        # Get MAC address string and parse it into raw bytes
+        mac_str = get_if_hwaddr(interface)
+        raw_mac = bytes.fromhex(mac_str.replace(":", ""))
         
         # Transaction ID
         xid = random.randint(1, 0xFFFFFFFF)
