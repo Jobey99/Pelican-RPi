@@ -129,24 +129,26 @@ body {
 .nav-menu {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
 .nav-btn {
     background: transparent;
     border: 1px solid transparent;
     color: var(--text-secondary);
-    padding: 14px 20px;
-    border-radius: 14px;
+    padding: 11px 16px;
+    border-radius: 12px;
     font-family: var(--font-sans);
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     text-align: left;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     transition: all var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
 }
 

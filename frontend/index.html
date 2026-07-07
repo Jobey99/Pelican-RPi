@@ -22,11 +22,23 @@
                 <button class="nav-btn" data-tab="active-tab">
                     <span class="icon">⚡</span> Active Probes
                 </button>
+                <button class="nav-btn" data-tab="topology-tab">
+                    <span class="icon">🗺️</span> Topology Map
+                </button>
+                <button class="nav-btn" data-tab="multicast-tab">
+                    <span class="icon">📺</span> AV-over-IP Multicast
+                </button>
+                <button class="nav-btn" data-tab="camera-tab">
+                    <span class="icon">📹</span> CCTV Camera Inspector
+                </button>
                 <button class="nav-btn" data-tab="serial-tab">
                     <span class="icon">🔌</span> USB Serial Bridge
                 </button>
                 <button class="nav-btn" data-tab="network-tab">
                     <span class="icon">⚙️</span> Interface Manager
+                </button>
+                <button class="nav-btn" data-tab="report-tab">
+                    <span class="icon">📋</span> Commissioning Report
                 </button>
             </nav>
             <div class="sidebar-status">
@@ -501,6 +513,111 @@
                             <button id="close-modal-btn" class="btn btn-secondary">Cancel</button>
                             <button id="apply-network-btn" class="btn btn-primary">Apply Settings</button>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: TOPOLOGY MAP -->
+            <section id="topology-tab" class="tab-content">
+                <div class="card">
+                    <h3>🗺️ Live Network Topology Map</h3>
+                    <p class="card-desc">Visual tree connecting the parent switch to individual interfaces, VLAN tags, and active client hardware nodes.</p>
+                    <button id="refresh-topology-btn" class="btn btn-secondary btn-sm margin-bottom-sm">Redraw Map</button>
+                    <div style="min-height: 480px; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.18); border-radius: 6px; padding: 20px; overflow: auto; border: 1px solid var(--border-color);">
+                        <svg id="topology-svg" width="100%" height="450px" style="min-width: 800px;"></svg>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: MULTICAST & IGMP -->
+            <section id="multicast-tab" class="tab-content">
+                <!-- IGMP Flood alert banner -->
+                <div id="igmp-flood-alert" class="card hidden" style="background: rgba(255, 159, 67, 0.12); border: 2px solid #ff9f43; margin-bottom: 24px; padding: 18px 24px;">
+                    <div style="display: flex; align-items: center; gap: 12px; color: #ff9f43; font-weight: 700; font-size: 1.1rem;">
+                        ⚠️ IGMP MULTICAST FLOOD DETECTED
+                    </div>
+                    <p style="margin-top: 8px; font-size: 0.9rem; color: var(--text-primary);">
+                        High bandwidth multicast stream detected on our interface. Since our host has not sent an IGMP Join request, this port is receiving unsolicited multicast traffic. **IGMP Snooping is likely disabled or misconfigured on the connected switch.**
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h3>📺 Multicast Stream Monitor</h3>
+                    <p class="card-desc">Real-time bitrates, packet counting, and security warnings for background IGMP groups.</p>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Multicast Group IP</th>
+                                    <th>Bandwidth Rate (Mbps)</th>
+                                    <th>Packets Sniffed</th>
+                                    <th>Link State</th>
+                                    <th>Last Seen</th>
+                                </tr>
+                            </thead>
+                            <tbody id="multicast-table-body">
+                                <tr>
+                                    <td colspan="5" class="text-center">Listening for multicast traffic groups...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: CCTV CAMERA INSPECTOR -->
+            <section id="camera-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <h3>📹 ONVIF Camera & CCTV Auditor</h3>
+                            <p class="card-desc">Discover ONVIF surveillance cameras on the link and probe basic factory default credentials.</p>
+                        </div>
+                        <button id="run-camera-scan-btn" class="btn btn-primary">Scan & Audit Cameras</button>
+                    </div>
+                    
+                    <div class="table-responsive margin-top">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>IP Address</th>
+                                    <th>Camera Vendor</th>
+                                    <th>ONVIF URL</th>
+                                    <th>Security Status / Password Test</th>
+                                    <th>RTSP Stream URI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="camera-table-body">
+                                <tr>
+                                    <td colspan="5" class="text-center">Click Scan & Audit Cameras to search the network.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: COMMISSIONING REPORT -->
+            <section id="report-tab" class="tab-content">
+                <div class="card">
+                    <h3>📋 Site Handover Commissioning Report</h3>
+                    <p class="card-desc">Enter project metrics to compile a complete network audit, diagnostic charts, and device list into a print-ready report.</p>
+                    
+                    <div class="form-group margin-top">
+                        <label for="report-client-name">Project / Client Name:</label>
+                        <input type="text" id="report-client-name" placeholder="e.g. Acme HQ Boardroom A">
+                    </div>
+                    <div class="form-group">
+                        <label for="report-tech-name">Lead Commissioning Technician:</label>
+                        <input type="text" id="report-tech-name" placeholder="e.g. Josh Jobey">
+                    </div>
+                    <div class="form-group">
+                        <label for="report-notes">Site Handover / Commissioning Notes:</label>
+                        <textarea id="report-notes" rows="6" placeholder="Document any custom VLAN mappings, IP blocks, serial bridge setups, or notes here..."></textarea>
+                    </div>
+                    
+                    <div class="margin-top">
+                        <button id="generate-report-btn" class="btn btn-primary">Generate Handover PDF Report</button>
                     </div>
                 </div>
             </section>

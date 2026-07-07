@@ -1,7 +1,7 @@
 import os
 import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -19,6 +19,9 @@ from ip_conflict import IpConflictDetector
 from dhcp_server import LocalDhcpServer
 from dns_cable_diag import audit_cable_link, measure_dns_latency
 from ping_logger import PingMonitor
+from multicast_sniff import MulticastAuditor
+from camera_inspect import scan_onvif_cameras
+from report_gen import generate_commissioning_report
 
 app = FastAPI(title="RPi AV/IT Network Powerhouse API")
 
@@ -38,6 +41,7 @@ lldp_parser = LldpCdpParser()
 conflict_detector = IpConflictDetector()
 dhcp_server = LocalDhcpServer()
 ping_monitor = PingMonitor()
+multicast_auditor = MulticastAuditor()
 
 # Pydantic models for request bodies
 class InterfaceConfig(BaseModel):
@@ -238,9 +242,10 @@ def trigger_wake_on_lan(req: WolRequest):
 
 @app.on_event("startup")
 def startup_event():
-    # Automatically start LLDP parser and IP Conflict sniffer on eth0 by default
+    # Automatically start LLDP parser, IP Conflict sniffer, and Multicast auditor on eth0 by default
     lldp_parser.start("eth0")
     conflict_detector.start("eth0")
+    multicast_auditor.start("eth0")
 
 @app.on_event("shutdown")
 def shutdown_event():
@@ -249,6 +254,7 @@ def shutdown_event():
     dhcp_server.stop()
     sniffer.stop()
     ping_monitor.stop()
+    multicast_auditor.stop()
 
 # --- PHASE 2 DIAGNOSTICS ROUTES ---
 
@@ -331,6 +337,63 @@ def download_ping_log():
             media_type="text/csv"
         )
     raise HTTPException(status_code=404, detail="Ping diagnostics log file not found.")
+
+# --- PHASE 4 COMMERCIAL DIAGNOSTICS ---
+
+@app.get("/api/network/multicast")
+def get_multicast_streams():
+    return multicast_auditor.get_status()
+
+@app.post("/api/network/cameras")
+def run_camera_security_scan(req: DiagnosticRequest):
+    # Grab the active IP address of the interface to bind socket correctly
+    import socket
+    iface_ip = "0.0.0.0"
+    try:
+        import fcntl
+        import struct
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        iface_ip = socket.inet_ntoa(fcntl.ioctl(
+            s.fileno(),
+            0x8915,  # SIOCGIFADDR
+            struct.pack('256s', req.interface[:15].encode('utf-8'))
+        )[20:24])
+    except Exception:
+        pass
+    return scan_onvif_cameras(iface_ip)
+
+@app.get("/api/network/report/download")
+def download_site_commission_report(client: str = "Default Project", tech: str = "Field Engineer", notes: str = ""):
+    # Gather all telemetry databases
+    lldp_info = lldp_parser.get_info()
+    
+    # Run a quick cable / DNS diagnostics call synchronously
+    cable_res = audit_cable_link("eth0")
+    dns_res = measure_dns_latency()
+    diag_info = {
+        "interface": "eth0",
+        "cable": cable_res,
+        "dns": dns_res
+    }
+    
+    ping_status = ping_monitor.get_status()
+    devices = sniffer.get_devices()
+    
+    # Generate standalone print-ready HTML
+    report_html = generate_commissioning_report(
+        client_name=client,
+        technician=tech,
+        notes=notes,
+        lldp_info=lldp_info,
+        diag_info=diag_info,
+        ping_status=ping_status,
+        devices=devices
+    )
+    
+    return HTMLResponse(
+        content=report_html,
+        headers={"Content-Disposition": "attachment; filename=site_commissioning_report.html"}
+    )
 
 # --- WEBSOCKET FOR RS232 TERMINAL ---
 

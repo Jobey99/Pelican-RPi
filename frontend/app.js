@@ -14,6 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initAvControls();
     initPhase2Features();
     initPhase3Features();
+    initPhase4Features();
     
     // Initial fetch of configuration details
     fetchInterfaces();
@@ -23,6 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchConflicts();
     fetchDhcpServerStatus();
     fetchPingStatus();
+    fetchMulticastStatus();
     
     // Poll active interface listings periodically
     interfacePollInterval = setInterval(fetchInterfaces, 5000);
@@ -30,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(fetchConflicts, 3000);
     setInterval(fetchDhcpServerStatus, 5000);
     setInterval(fetchPingStatus, 1000);
+    setInterval(fetchMulticastStatus, 3000);
 });
 
 // --- TAB NAVIGATION ---
@@ -1000,5 +1003,310 @@ function fetchPingStatus() {
                 sparkline.innerHTML = `<div style="color: var(--text-muted); font-size: 0.8rem; text-align: center; width: 100%;">Monitor inactive. Click Start Logging to render graph.</div>`;
             }
         });
+}
+
+// --- PHASE 4 COMMERCIAL-GRADE SUITE ---
+
+function initPhase4Features() {
+    const refreshTopologyBtn = document.getElementById("refresh-topology-btn");
+    const runCameraScanBtn = document.getElementById("run-camera-scan-btn");
+    const generateReportBtn = document.getElementById("generate-report-btn");
+
+    if (refreshTopologyBtn) {
+        refreshTopologyBtn.addEventListener("click", () => {
+            drawTopology();
+        });
+    }
+
+    if (runCameraScanBtn) {
+        runCameraScanBtn.addEventListener("click", () => {
+            const selectedIface = document.getElementById("sniffer-interface-select").value;
+            const tableBody = document.getElementById("camera-table-body");
+            runCameraScanBtn.disabled = true;
+            runCameraScanBtn.innerText = "Scanning CCTV Network...";
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center"><span class="pulse-dot"></span> Searching for ONVIF devices and testing default credentials...</td></tr>`;
+
+            fetch(API_BASE + "/api/network/cameras", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ interface: selectedIface })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.cameras.length > 0) {
+                    tableBody.innerHTML = data.cameras.map(cam => {
+                        const isVulnerable = cam.credentials.includes("Vulnerable");
+                        const statusClass = isVulnerable ? "text-danger" : "text-success";
+                        return `
+                            <tr>
+                                <td><strong>${cam.ip}</strong></td>
+                                <td>${cam.vendor}</td>
+                                <td><a href="${cam.onvif_url}" target="_blank" style="color: var(--accent); text-decoration: underline; font-size: 0.82rem;">Endpoint Link</a></td>
+                                <td class="${statusClass}"><strong>${cam.credentials}</strong></td>
+                                <td><span style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-secondary);">${cam.rtsp_url}</span></td>
+                            </tr>
+                        `;
+                    }).join("");
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No ONVIF IP Cameras discovered on this segment.</td></tr>`;
+                }
+            })
+            .catch(err => {
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Scan failed: ${err}</td></tr>`;
+            })
+            .finally(() => {
+                runCameraScanBtn.disabled = false;
+                runCameraScanBtn.innerText = "Scan & Audit Cameras";
+            });
+        });
+    }
+
+    if (generateReportBtn) {
+        generateReportBtn.addEventListener("click", () => {
+            const client = encodeURIComponent(document.getElementById("report-client-name").value.trim() || "Default Project");
+            const tech = encodeURIComponent(document.getElementById("report-tech-name").value.trim() || "Field Engineer");
+            const notes = encodeURIComponent(document.getElementById("report-notes").value.trim() || "");
+
+            // Navigate to file download URL directly
+            window.location.href = `${API_BASE}/api/network/report/download?client=${client}&tech=${tech}&notes=${notes}`;
+        });
+    }
+
+    // Trigger topology redraw when Tab 3 is selected
+    const navButtons = document.querySelectorAll(".nav-btn");
+    navButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            if (btn.getAttribute("data-tab") === "topology-tab") {
+                // Quick delay to ensure tab is visible before calculating bounds
+                setTimeout(drawTopology, 150);
+            }
+        });
+    });
+}
+
+function fetchMulticastStatus() {
+    const tableBody = document.getElementById("multicast-table-body");
+    if (!tableBody) return;
+
+    fetch(API_BASE + "/api/network/multicast")
+        .then(r => r.json())
+        .then(data => {
+            const floodAlert = document.getElementById("igmp-flood-alert");
+            if (data.flooding_detected) {
+                floodAlert.classList.remove("hidden");
+            } else {
+                floodAlert.classList.add("hidden");
+            }
+
+            if (data.streams && data.streams.length > 0) {
+                tableBody.innerHTML = data.streams.map(str => {
+                    const badgeClass = str.flooding ? "badge-danger" : "badge-success";
+                    const badgeText = str.flooding ? "⚠️ Unsolicited Flood" : "Healthy IGMP";
+                    return `
+                        <tr>
+                            <td><strong>${str.ip}</strong></td>
+                            <td><strong style="color: var(--accent);">${str.bandwidth_mbps} Mbps</strong></td>
+                            <td>${str.packet_count}</td>
+                            <td><span class="badge ${badgeClass}">${badgeText}</span></td>
+                            <td style="font-family: var(--font-mono); font-size: 0.85rem;">${str.last_seen}</td>
+                        </tr>
+                    `;
+                }).join("");
+            } else {
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">No active multicast streams sniffed. Connecting/running IGMP...</td></tr>`;
+            }
+        })
+        .catch(() => {});
+}
+
+function drawTopology() {
+    const svg = document.getElementById("topology-svg");
+    if (!svg) return;
+
+    // Clear canvas
+    svg.innerHTML = "";
+
+    // Fetch Switch Port info (LLDP) and Discovered Devices
+    Promise.all([
+        fetch(API_BASE + "/api/network/lldp").then(r => r.json()),
+        fetch(API_BASE + "/api/network/conflicts").then(r => r.json()) // Check if device list is empty
+    ])
+    .then(([lldp, conflicts]) => {
+        // Fetch devices list from sniffer
+        // Standard devices list will be fetched from current sniffer database if we trigger it,
+        // but let's gather active devices directly.
+        // For visual layout simplicity, we'll grab devices from local cache table or quickly hit API.
+        fetch(API_BASE + "/api/interfaces")
+            .then(r => r.json())
+            .then(ifaces => {
+                // Render tree node structure
+                const svgNS = "http://www.w3.org/2000/svg";
+                
+                // Helper to create elements
+                const createSVGElement = (type, attrs) => {
+                    const el = document.createElementNS(svgNS, type);
+                    for (let key in attrs) {
+                        el.setAttribute(key, attrs[key]);
+                    }
+                    return el;
+                };
+
+                // Add background grid or effects
+                // 1. Switch Node (Top Centre)
+                const switchName = lldp.switch_name || "Unknown managed Switch";
+                const switchIP = lldp.ip || "No Switch IP";
+                const switchModel = lldp.model || "CDP/LLDP Listening...";
+                const switchPort = lldp.port_id || "Unmapped Port";
+                const switchVlan = lldp.vlan || "N/A";
+                const switchProtocol = lldp.protocol || "No Protocol";
+
+                // Draw Switch Box
+                const swBox = createSVGElement("rect", {
+                    x: 275, y: 20, width: 250, height: 80, rx: 8, ry: 8,
+                    fill: "rgba(0,0,0,0.45)", stroke: "var(--accent)", "stroke-width": 2
+                });
+                svg.appendChild(swBox);
+
+                // Switch label
+                const swText1 = createSVGElement("text", { x: 400, y: 45, "text-anchor": "middle", fill: "#fff", "font-weight": "bold", "font-size": "14" });
+                swText1.textContent = `🖥️ ${switchName}`;
+                svg.appendChild(swText1);
+
+                const swText2 = createSVGElement("text", { x: 400, y: 65, "text-anchor": "middle", fill: "var(--text-muted)", "font-size": "11" });
+                swText2.textContent = `IP: ${switchIP} | Model: ${switchModel}`;
+                svg.appendChild(swText2);
+
+                const swText3 = createSVGElement("text", { x: 400, y: 82, "text-anchor": "middle", fill: "var(--text-secondary)", "font-size": "10", "font-weight": "bold" });
+                swText3.textContent = `Source Protocol: ${switchProtocol}`;
+                svg.appendChild(swText3);
+
+                // 2. Port / Interface Connection Node (Middle Centre)
+                // Draw connecting line from Switch to Port Node
+                const linkLine1 = createSVGElement("line", {
+                    x1: 400, y1: 100, x2: 400, y2: 170,
+                    stroke: "rgba(255,255,255,0.25)", "stroke-width": 2, "stroke-dasharray": "4,4"
+                });
+                svg.appendChild(linkLine1);
+
+                // Port / VLAN circle
+                const portNode = createSVGElement("rect", {
+                    x: 290, y: 170, width: 220, height: 60, rx: 6, ry: 6,
+                    fill: "rgba(0,0,0,0.55)", stroke: "var(--success)", "stroke-width": 2
+                });
+                svg.appendChild(portNode);
+
+                const portText1 = createSVGElement("text", { x: 400, y: 192, "text-anchor": "middle", fill: "var(--success)", "font-weight": "bold", "font-size": "12" });
+                portText1.textContent = `🔌 Port: ${switchPort}`;
+                svg.appendChild(portText1);
+
+                const portText2 = createSVGElement("text", { x: 400, y: 215, "text-anchor": "middle", fill: "#fff", "font-size": "11" });
+                portText2.textContent = `VLAN Tag: ${switchVlan}`;
+                svg.appendChild(portText2);
+
+                // 3. This Jumpbox Node (Bottom Centre Left)
+                const linkLine2 = createSVGElement("line", {
+                    x1: 400, y1: 230, x2: 250, y2: 320,
+                    stroke: "rgba(255,255,255,0.25)", "stroke-width": 2
+                });
+                svg.appendChild(linkLine2);
+
+                const rpiNode = createSVGElement("rect", {
+                    x: 140, y: 320, width: 220, height: 75, rx: 6, ry: 6,
+                    fill: "rgba(0,0,0,0.5)", stroke: "var(--accent)", "stroke-width": 2
+                });
+                svg.appendChild(rpiNode);
+
+                const rpiText1 = createSVGElement("text", { x: 250, y: 342, "text-anchor": "middle", fill: "#fff", "font-weight": "bold", "font-size": "12" });
+                rpiText1.textContent = `🍓 RPi4 Jump Box (This Host)`;
+                svg.appendChild(rpiText1);
+
+                // Find eth0 IP address to display
+                let eth0Ip = "No IP Assigned";
+                const eth0 = ifaces.find(i => i.name === "eth0");
+                if (eth0 && eth0.addresses && eth0.addresses.length > 0) {
+                    eth0Ip = eth0.addresses[0];
+                }
+
+                const rpiText2 = createSVGElement("text", { x: 250, y: 362, "text-anchor": "middle", fill: "var(--text-muted)", "font-size": "11" });
+                rpiText2.textContent = `Interface: eth0 | IP: ${eth0Ip}`;
+                svg.appendChild(rpiText2);
+
+                const rpiText3 = createSVGElement("text", { x: 250, y: 380, "text-anchor": "middle", fill: "var(--text-secondary)", "font-size": "10" });
+                rpiText3.textContent = `MAC: ${eth0 ? eth0.mac : 'N/A'}`;
+                svg.appendChild(rpiText3);
+
+                // 4. Other discovered Client Devices (Bottom Centre Right)
+                // To display active devices, we scan the DOM for devices in the discovered devices table.
+                // This makes it dynamic and guarantees we don't have to cache arrays on client!
+                const rows = Array.from(document.querySelectorAll("#device-list-body tr"));
+                const devices = [];
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll("td");
+                    if (cells.length >= 4) {
+                        devices.push({
+                            ip: cells[0].textContent.trim(),
+                            mac: cells[1].textContent.trim(),
+                            vendor: cells[2].textContent.trim(),
+                            protocol: cells[3].textContent.trim()
+                        });
+                    }
+                });
+
+                // Display up to 3 other devices to prevent layout clutter
+                const dispDevs = devices.slice(0, 3);
+                if (dispDevs.length > 0) {
+                    dispDevs.forEach((dev, index) => {
+                        const dx = 550 + index * 180;
+                        const dy = 320;
+
+                        // Connection line
+                        const cLine = createSVGElement("line", {
+                            x1: 400, y1: 230, x2: dx + 80, y2: dy,
+                            stroke: "rgba(255,255,255,0.18)", "stroke-width": 2
+                        });
+                        svg.appendChild(cLine);
+
+                        // Device Box
+                        const devBox = createSVGElement("rect", {
+                            x: dx, y: dy, width: 160, height: 75, rx: 6, ry: 6,
+                            fill: "rgba(0,0,0,0.35)", stroke: "var(--border-color)", "stroke-width": 1.5
+                        });
+                        svg.appendChild(devBox);
+
+                        const devText1 = createSVGElement("text", { x: dx + 80, y: dy + 22, "text-anchor": "middle", fill: "#fff", "font-weight": "bold", "font-size": "11" });
+                        devText1.textContent = dev.ip;
+                        svg.appendChild(devText1);
+
+                        const devText2 = createSVGElement("text", { x: dx + 80, y: dy + 40, "text-anchor": "middle", fill: "var(--text-muted)", "font-size": "10" });
+                        devText2.textContent = dev.vendor.length > 18 ? dev.vendor.substring(0, 16) + "..." : dev.vendor;
+                        svg.appendChild(devText2);
+
+                        const devText3 = createSVGElement("text", { x: dx + 80, y: dy + 58, "text-anchor": "middle", fill: "var(--text-secondary)", "font-size": "9" });
+                        devText3.textContent = `Via: ${dev.protocol}`;
+                        svg.appendChild(devText3);
+                    });
+                } else {
+                    // No other devices, connect to empty wire box
+                    const dx = 550;
+                    const dy = 320;
+
+                    const cLine = createSVGElement("line", {
+                        x1: 400, y1: 230, x2: dx + 80, y2: dy,
+                        stroke: "rgba(255,255,255,0.18)", "stroke-dasharray": "2,2", "stroke-width": 2
+                    });
+                    svg.appendChild(cLine);
+
+                    const devBox = createSVGElement("rect", {
+                        x: dx, y: dy, width: 160, height: 75, rx: 6, ry: 6,
+                        fill: "rgba(0,0,0,0.2)", stroke: "rgba(255,255,255,0.15)", "stroke-width": 1.5, "stroke-dasharray": "2,2"
+                    });
+                    svg.appendChild(devBox);
+
+                    const devText1 = createSVGElement("text", { x: dx + 80, y: dy + 42, "text-anchor": "middle", fill: "var(--text-secondary)", "font-size": "10" });
+                    devText1.textContent = "Listening for Devices...";
+                    svg.appendChild(devText1);
+                }
+            });
+    });
 }
 
