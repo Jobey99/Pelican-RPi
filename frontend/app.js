@@ -1246,6 +1246,7 @@ function fetchMulticastStatus() {
                     return `
                         <tr>
                             <td><strong>${str.ip}</strong></td>
+                            <td><span class="badge" style="background: rgba(var(--accent-rgb), 0.15); border: 1px solid rgba(var(--accent-rgb), 0.35); color: var(--accent); font-weight: 600; font-size: 0.8rem;">${str.protocol}</span></td>
                             <td><strong style="color: var(--accent);">${str.bandwidth_mbps} Mbps</strong></td>
                             <td>${str.packet_count}</td>
                             <td><span class="badge ${badgeClass}">${badgeText}</span></td>
