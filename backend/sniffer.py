@@ -31,6 +31,48 @@ class PassiveSniffer:
         mac_prefix = mac.lower().replace("-", ":")[:8]
         return self.oui_db.get(mac_prefix, "Unknown Vendor")
 
+    def _detect_vendor_from_hostname(self, hostname: str) -> str:
+        if not hostname or hostname == "Unknown":
+            return None
+        h_lower = hostname.lower()
+        mapping = {
+            "crestron": "Crestron Electronics",
+            "extron": "Extron Electronics",
+            "qsc": "QSC / Q-SYS",
+            "qsys": "QSC / Q-SYS",
+            "q-sys": "QSC / Q-SYS",
+            "biamp": "Biamp Systems",
+            "shure": "Shure Inc.",
+            "kramer": "Kramer Electronics",
+            "audinate": "Audinate (Dante)",
+            "dante": "Audinate (Dante)",
+            "panasonic": "Panasonic",
+            "epson": "Epson",
+            "sony": "Sony",
+            "samsung": "Samsung",
+            "lg-": "LG Electronics",
+            "lgtv": "LG Electronics",
+            "axis": "Axis Communications",
+            "hikvision": "Hikvision",
+            "dahua": "Dahua",
+            "barco": "Barco",
+            "yamaha": "Yamaha Corp",
+            "apple": "Apple Inc.",
+            "sonos": "Sonos",
+            "cisco": "Cisco Systems",
+            "netgear": "Netgear",
+            "tplink": "TP-Link",
+            "tp-link": "TP-Link",
+            "ubiquiti": "Ubiquiti Networks",
+            "unifi": "Ubiquiti Networks",
+            "raspberry": "Raspberry Pi Foundation",
+            "raspi": "Raspberry Pi Foundation"
+        }
+        for kw, vendor in mapping.items():
+            if kw in h_lower:
+                return vendor
+        return None
+
     def _packet_callback(self, pkt):
         mac = None
         ip = None
@@ -119,12 +161,18 @@ class PassiveSniffer:
         # Update devices dictionary
         if mac:
             mac_lower = mac.lower()
+            vendor = self.get_vendor(mac_lower)
+            if vendor == "Unknown Vendor" and hostname:
+                h_vendor = self._detect_vendor_from_hostname(hostname)
+                if h_vendor:
+                    vendor = h_vendor
+
             if mac_lower not in self.devices:
                 self.devices[mac_lower] = {
                     "mac": mac,
                     "ip": ip,
                     "hostname": hostname or "Unknown",
-                    "vendor": self.get_vendor(mac_lower),
+                    "vendor": vendor,
                     "protocols": {protocol} if protocol else set(),
                     "last_seen": time.time()
                 }
@@ -134,6 +182,11 @@ class PassiveSniffer:
                     dev["ip"] = ip
                 if hostname and (dev["hostname"] == "Unknown" or not dev["hostname"]):
                     dev["hostname"] = hostname
+                    # Try to resolve vendor if it was unknown
+                    if dev["vendor"] == "Unknown Vendor":
+                        h_vendor = self._detect_vendor_from_hostname(hostname)
+                        if h_vendor:
+                            dev["vendor"] = h_vendor
                 if protocol:
                     dev["protocols"].add(protocol)
                 dev["last_seen"] = time.time()
