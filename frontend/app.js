@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initPhase3Features();
     initPhase4Features();
     initSpecializedAVSuite();
+    initResponsiveAndHelp();
     
     // Initial fetch of configuration details
     fetchInterfaces();
@@ -610,7 +611,7 @@ function initDhcpAndIperf() {
                     </tr>
                 `).join("");
             } else {
-                dhcpBody.innerHTML = `<tr><td colspan="5" class="text-center text-warning">⚠️ No DHCP offers received. Subnet is likely fully static.</td></tr>`;
+                dhcpBody.innerHTML = `<tr><td colspan="5" class="text-center text-warning">No DHCP offers received. Subnet is likely fully static.</td></tr>`;
             }
         })
         .catch(err => {
@@ -1102,7 +1103,7 @@ function initPhase4Features() {
             .then(r => r.json())
             .then(lldp => {
                 const lldpPassed = lldp.protocol && lldp.protocol !== "None" && lldp.protocol !== "Listening...";
-                const lldpItem = `<div>${lldpPassed ? "✅" : "⚠️"} Switch Discovery: ${lldpPassed ? `Connected to ${lldp.switch_name} on Port ${lldp.port_id}` : "No LLDP/CDP packets detected (Bypassed)"}</div>`;
+                const lldpItem = `<div>${lldpPassed ? '<span style="color: var(--success); font-weight: bold;">[PASS]</span>' : '<span style="color: var(--warning); font-weight: bold;">[WARN]</span>'} Switch Discovery: ${lldpPassed ? `Connected to ${lldp.switch_name} on Port ${lldp.port_id}` : "No LLDP/CDP packets detected (Bypassed)"}</div>`;
 
                 // 2. Link & DNS Diagnostics (15% -> 35%)
                 setTimeout(() => {
@@ -1116,10 +1117,10 @@ function initPhase4Features() {
                     .then(r => r.json())
                     .then(diag => {
                         const linkPassed = diag.cable.success && !diag.cable.warning;
-                        const linkItem = `<div>${linkPassed ? "✅" : "⚠️"} Link Negotiation: ${diag.cable.success ? `${diag.cable.speed} / ${diag.cable.duplex}` : "Not audited"}</div>`;
+                        const linkItem = `<div>${linkPassed ? '<span style="color: var(--success); font-weight: bold;">[PASS]</span>' : '<span style="color: var(--warning); font-weight: bold;">[WARN]</span>'} Link Negotiation: ${diag.cable.success ? `${diag.cable.speed} / ${diag.cable.duplex}` : "Not audited"}</div>`;
                         
                         const dnsPassed = diag.dns.success;
-                        const dnsItem = `<div>${dnsPassed ? "✅" : "❌"} DNS Health Lookup: ${dnsPassed ? `${diag.dns.latency_ms} ms` : "Failed or timed out"}</div>`;
+                        const dnsItem = `<div>${dnsPassed ? '<span style="color: var(--success); font-weight: bold;">[PASS]</span>' : '<span style="color: var(--danger); font-weight: bold;">[FAIL]</span>'} DNS Health Lookup: ${dnsPassed ? `${diag.dns.latency_ms} ms` : "Failed or timed out"}</div>`;
 
                         // 3. DHCP Server Security Audit (35% -> 55%)
                         setTimeout(() => {
@@ -1138,12 +1139,12 @@ function initPhase4Features() {
                                 if (dhcpSuccess && dhcpServers.length > 0) {
                                     const serverIps = dhcpServers.map(s => s.server_ip).join(", ");
                                     if (dhcpServers.length === 1) {
-                                        dhcpItem = `<div>✅ DHCP Server Audit: 1 active server detected (${serverIps})</div>`;
+                                        dhcpItem = `<div><span style="color: var(--success); font-weight: bold;">[PASS]</span> DHCP Server Audit: 1 active server detected (${serverIps})</div>`;
                                     } else {
-                                        dhcpItem = `<div>❌ DHCP Server Audit: Rogue DHCP servers detected! (${dhcpServers.length} active: ${serverIps})</div>`;
+                                        dhcpItem = `<div><span style="color: var(--danger); font-weight: bold;">[FAIL]</span> DHCP Server Audit: Rogue DHCP servers detected! (${dhcpServers.length} active: ${serverIps})</div>`;
                                     }
                                 } else {
-                                    dhcpItem = `<div>⚠️ DHCP Server Audit: No DHCP offers received. Subnet is static.</div>`;
+                                    dhcpItem = `<div><span style="color: var(--warning); font-weight: bold;">[WARN]</span> DHCP Server Audit: No DHCP offers received. Subnet is static.</div>`;
                                 }
 
                                 // 4. IP Conflicts (55% -> 75%)
@@ -1154,7 +1155,7 @@ function initPhase4Features() {
                                     .then(r => r.json())
                                     .then(conflicts => {
                                         const conflictPassed = conflicts.length === 0;
-                                        const conflictItem = `<div>${conflictPassed ? "✅" : "❌"} IP Conflict Scan: ${conflictPassed ? "0 IP conflicts detected" : `${conflicts.length} conflict(s) active`}</div>`;
+                                        const conflictItem = `<div>${conflictPassed ? '<span style="color: var(--success); font-weight: bold;">[PASS]</span>' : '<span style="color: var(--danger); font-weight: bold;">[FAIL]</span>'} IP Conflict Scan: ${conflictPassed ? "0 IP conflicts detected" : `${conflicts.length} conflict(s) active`}</div>`;
 
                                         // 5. Active QoS Ping Test (8 packets) (75% -> 95%)
                                         setTimeout(() => {
@@ -1168,7 +1169,7 @@ function initPhase4Features() {
                                             .then(r => r.json())
                                             .then(ping => {
                                                 const pingPassed = ping.success && ping.loss_percent < 2;
-                                                const pingItem = `<div>${ping.success ? (pingPassed ? "✅" : "❌") : "❌"} QoS Ping Stability: ${ping.success ? `${ping.loss_percent}% packet loss (Avg: ${ping.avg_rtt} ms)` : `Ping test failed: ${ping.error}`}</div>`;
+                                                const pingItem = `<div>${ping.success ? (pingPassed ? '<span style="color: var(--success); font-weight: bold;">[PASS]</span>' : '<span style="color: var(--danger); font-weight: bold;">[FAIL]</span>') : '<span style="color: var(--danger); font-weight: bold;">[FAIL]</span>'} QoS Ping Stability: ${ping.success ? `${ping.loss_percent}% packet loss (Avg: ${ping.avg_rtt} ms)` : `Ping test failed: ${ping.error}`}</div>`;
 
                                                 // 6. Completion (100%)
                                                 setTimeout(() => {
@@ -1176,7 +1177,7 @@ function initPhase4Features() {
                                                     
                                                     // Render checklist results
                                                     resultsBox.innerHTML = `
-                                                        <div style="font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; color: var(--accent);">📊 AUTOMATED SITE VERIFICATION RESULTS:</div>
+                                                        <div style="font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; color: var(--accent);">AUTOMATED SITE VERIFICATION RESULTS:</div>
                                                         ${lldpItem}
                                                         ${linkItem}
                                                         ${dnsItem}
@@ -1241,7 +1242,7 @@ function fetchMulticastStatus() {
             if (data.streams && data.streams.length > 0) {
                 tableBody.innerHTML = data.streams.map(str => {
                     const badgeClass = str.flooding ? "badge-danger" : "badge-success";
-                    const badgeText = str.flooding ? "⚠️ Unsolicited Flood" : "Healthy IGMP";
+                    const badgeText = str.flooding ? "Unsolicited Flood" : "Healthy IGMP";
                     return `
                         <tr>
                             <td><strong>${str.ip}</strong></td>
@@ -1574,12 +1575,12 @@ function fetchAVNetworkHealth() {
 
         if (data.alerts && data.alerts.length > 0) {
             alertsList.innerHTML = data.alerts.map(alert => `
-                <div style="padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.04); color: ${alert.includes('❌') ? 'var(--danger)' : 'var(--warning)'};">
+                <div style="padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.04); color: ${alert.includes('CRITICAL') ? 'var(--danger)' : 'var(--warning)'};">
                     ${alert}
                 </div>
             `).join("");
         } else {
-            alertsList.innerHTML = `<div style="color: var(--success); text-align: center; margin-top: 35px;">✅ No network anomalies active.</div>`;
+            alertsList.innerHTML = `<div style="color: var(--success); text-align: center; margin-top: 35px;">No network anomalies active.</div>`;
         }
     })
     .catch(err => {
@@ -1587,3 +1588,44 @@ function fetchAVNetworkHealth() {
     });
 }
 
+
+
+function initResponsiveAndHelp() {
+    // Help Modal
+    const helpBtn = document.getElementById("help-btn");
+    const helpModal = document.getElementById("help-modal");
+    const closeHelpBtn = document.getElementById("close-help-btn");
+    
+    if (helpBtn && helpModal && closeHelpBtn) {
+        helpBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            helpModal.classList.remove("hidden");
+        });
+        closeHelpBtn.addEventListener("click", () => {
+            helpModal.classList.add("hidden");
+        });
+        helpModal.addEventListener("click", (e) => {
+            if (e.target === helpModal) {
+                helpModal.classList.add("hidden");
+            }
+        });
+    }
+
+    // Mobile Navigation Toggle
+    const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+    const glassContainer = document.querySelector(".glass-container");
+    if (mobileMenuBtn && glassContainer) {
+        mobileMenuBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            glassContainer.classList.toggle("sidebar-open");
+        });
+        
+        // Auto-close sidebar on navigation selection
+        const navBtns = document.querySelectorAll(".nav-btn");
+        navBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                glassContainer.classList.remove("sidebar-open");
+            });
+        });
+    }
+}

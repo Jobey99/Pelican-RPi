@@ -19,10 +19,7 @@ def detect_dhcp_servers(interface: str, timeout: int = 3):
     try:
         # Get actual MAC address of interface
         mac_str = get_if_hwaddr(interface)
-        
-        # Generate a random client MAC address to bypass router lease caches
-        fake_mac_str = generate_random_mac()
-        fake_raw_mac = bytes.fromhex(fake_mac_str.replace(":", ""))
+        mac_raw = bytes.fromhex(mac_str.replace(":", ""))
         
         # Transaction ID
         xid = random.randint(1, 0xFFFFFFFF)
@@ -32,8 +29,12 @@ def detect_dhcp_servers(interface: str, timeout: int = 3):
             Ether(src=mac_str, dst="ff:ff:ff:ff:ff:ff") /
             IP(src="0.0.0.0", dst="255.255.255.255") /
             UDP(sport=68, dport=67) /
-            BOOTP(chaddr=fake_raw_mac, xid=xid, flags=0x8000) /  # 0x8000 sets the broadcast flag
-            DHCP(options=[("message-type", "discover"), "end"])
+            BOOTP(chaddr=mac_raw, xid=xid) /
+            DHCP(options=[
+                ("message-type", "discover"), 
+                ("param_req_list", [1, 3, 6, 15, 28, 42]), 
+                "end"
+            ])
         )
         
         # Send packets and record answers

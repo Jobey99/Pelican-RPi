@@ -642,7 +642,7 @@ def get_av_network_health():
     if conflicts:
         score -= 35
         for c in conflicts:
-            alerts.append(f"❌ IP Conflict Active: IP {c.get('ip')} is bound to two separate MAC addresses!")
+            alerts.append(f"CRITICAL: IP Conflict Active: IP {c.get('ip')} is bound to two separate MAC addresses!")
 
     # 2. Rogue DHCP Server check
     dhcp_res = detect_dhcp_servers("eth0", timeout=1)
@@ -651,28 +651,28 @@ def get_av_network_health():
         if len(servers) > 1:
             score -= 30
             server_ips = ", ".join([s.get("server_ip") for s in servers])
-            alerts.append(f"❌ Rogue DHCP Conflict: {len(servers)} DHCP servers active ({server_ips})!")
+            alerts.append(f"CRITICAL: Rogue DHCP Conflict: {len(servers)} DHCP servers active ({server_ips})!")
 
     # 3. IGMP Multicast Flooding check
     multicast_status = multicast_auditor.get_status()
     if multicast_status.get("flooding_detected"):
         score -= 20
-        alerts.append("⚠️ IGMP Flooding Detected: Multicast stream packets are flooding this port! (Enable IGMP Snooping & Querier on the switch).")
+        alerts.append("WARNING: IGMP Flooding Detected: Multicast stream packets are flooding this port! (Enable IGMP Snooping & Querier on the switch).")
 
     # 4. Interface speed/duplex negotiation warning
     cable_res = audit_cable_link("eth0")
     if cable_res.get("success") and cable_res.get("warning"):
         score -= 15
-        alerts.append(f"⚠️ Link Negotiation Issue: {cable_res.get('warning_message')}")
+        alerts.append(f"WARNING: Link Negotiation Issue: {cable_res.get('warning_message')}")
 
     # 5. DNS health resolution
     dns_res = measure_dns_latency()
     if not dns_res.get("success"):
         score -= 15
-        alerts.append("❌ Local DNS Resolution Failed: Gateway DNS is unreachable or queries are failing.")
+        alerts.append("CRITICAL: Local DNS Resolution Failed: Gateway DNS is unreachable or queries are failing.")
     elif dns_res.get("latency_ms") > 150:
         score -= 10
-        alerts.append(f"⚠️ Slow DNS Lookup: Resolve time is slow ({dns_res.get('latency_ms')} ms). Check DNS WAN configurations.")
+        alerts.append(f"WARNING: Slow DNS Lookup: Resolve time is slow ({dns_res.get('latency_ms')} ms). Check DNS WAN configurations.")
 
     score = max(0, score)
 

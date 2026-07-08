@@ -147,7 +147,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <table class="header-table">
         <tr>
             <td class="logo-area">
-                PELICAN NETWORK POWERHOUSE
+                ZAVI NETWORK REPORT
             </td>
             <td class="title-area">
                 Site Commissioning Report
@@ -162,7 +162,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         <div class="meta-item"><strong>Jump-Box Hostname:</strong> {hostname}</div>
     </div>
 
-    <h2>🔌 Switch Port Connection (LLDP/CDP)</h2>
+    <h2>Switch Port Connection (LLDP/CDP)</h2>
     <table class="data-table">
         <thead>
             <tr>
@@ -184,7 +184,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </tbody>
     </table>
 
-    <h2>⚡ Interface Diagnostics</h2>
+    <h2>Interface Diagnostics</h2>
     <table class="data-table">
         <thead>
             <tr>
@@ -206,7 +206,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </tbody>
     </table>
 
-    <h2>📈 QoS Network Performance (Last 60 Pings)</h2>
+    <h2>QoS Network Performance (Last 60 Pings)</h2>
     <table class="data-table" style="margin-bottom: 5px;">
         <thead>
             <tr>
@@ -232,7 +232,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         {sparkline_html}
     </div>
 
-    <h2>🔍 Passive Network Discovered Devices ({device_count})</h2>
+    <h2>Passive Network Discovered Devices ({device_count})</h2>
     <table class="data-table">
         <thead>
             <tr>
@@ -247,7 +247,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </tbody>
     </table>
 
-    <h2>✅ Automated Site Commissioning Checklist</h2>
+    <h2>Automated Site Commissioning Checklist</h2>
     <table class="data-table">
         <thead>
             <tr>
@@ -290,7 +290,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </tbody>
     </table>
 
-    <h2>📝 Commissioning Notes</h2>
+    <h2>Commissioning Notes</h2>
     <div class="notes-area">
         {notes}
     </div>

@@ -17,28 +17,28 @@
             </div>
             <nav class="nav-menu">
                 <button class="nav-btn active" data-tab="dashboard-tab">
-                    <span class="icon">🔍</span> Passive Discovery
+                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span> Passive Discovery
                 </button>
                 <button class="nav-btn" data-tab="active-tab">
-                    <span class="icon">⚡</span> Active Probes
+                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></span> Active Probes
                 </button>
                 <button class="nav-btn" data-tab="topology-tab">
-                    <span class="icon">🗺️</span> Topology Map
+                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path></svg></span> Topology Map
                 </button>
                 <button class="nav-btn" data-tab="multicast-tab">
-                    <span class="icon">📺</span> AV-over-IP Multicast
+                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg></span> AV-over-IP Multicast
                 </button>
                 <button class="nav-btn" data-tab="camera-tab">
-                    <span class="icon">📹</span> CCTV Camera Inspector
+                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></span> CCTV Camera Inspector
                 </button>
                 <button class="nav-btn" data-tab="serial-tab">
-                    <span class="icon">🔌</span> USB Serial Bridge
+                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="15" x2="23" y2="15"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="15" x2="4" y2="15"></line></svg></span> USB Serial Bridge
                 </button>
                 <button class="nav-btn" data-tab="network-tab">
-                    <span class="icon">⚙️</span> Interface Manager
+                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M12 8v8"></path><path d="M12 12H5v4"></path><path d="M12 12h7v4"></path></svg></span> Interface Manager
                 </button>
                 <button class="nav-btn" data-tab="report-tab">
-                    <span class="icon">📋</span> Commissioning Report
+                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span> Commissioning Report
                 </button>
             </nav>
             <div class="sidebar-status">
@@ -59,7 +59,7 @@
             <div id="ip-conflict-alert" class="card hidden" style="background: rgba(255, 65, 108, 0.12); border: 2px solid var(--danger); margin-bottom: 24px; padding: 18px 24px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span style="font-weight: 700; color: var(--danger); font-size: 1.1rem; display: inline-flex; align-items: center; gap: 10px;">
-                        ⚠️ IP ADDRESS CONFLICT DETECTED
+                        IP ADDRESS CONFLICT DETECTED
                     </span>
                     <button id="clear-conflicts-btn" class="btn btn-secondary btn-sm">Clear Alert</button>
                 </div>
@@ -70,6 +70,9 @@
 
             <!-- HEADER -->
             <header class="main-header">
+                <button id="mobile-menu-btn" class="mobile-menu-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
                 <h1 id="tab-title">Passive Network Auto-Discoverer</h1>
                 <div class="header-controls">
                     <label for="sniffer-interface-select">Interface:</label>
@@ -79,6 +82,7 @@
                     <button id="toggle-sniffer-btn" class="btn btn-primary">Start Sniffing</button>
                     <button id="toggle-stealth-btn" class="btn btn-secondary">Stealth: Off</button>
                     <button id="toggle-beacon-btn" class="btn btn-secondary">Beacon: Off</button>
+                    <button id="help-btn" class="btn btn-secondary" style="border-color: rgba(var(--accent-rgb), 0.35);">Help</button>
                 </div>
             </header>
 
@@ -88,7 +92,7 @@
                     <!-- Switch Port Mapper Card (LLDP/CDP) -->
                     <div class="card" style="border-color: rgba(var(--accent-rgb), 0.25); margin: 0; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
-                            <h3>🔌 Switch Port Mapping (LLDP/CDP)</h3>
+                            <h3>Switch Port Mapping (LLDP/CDP)</h3>
                             <p class="card-desc">Decodes background switch discovery packets to identify switch interface and VLAN assignments.</p>
                             <div class="grid-2-col" style="grid-template-columns: 1fr 1fr; gap: 16px; font-family: var(--font-mono); font-size: 0.95rem; margin-top: 15px;">
                                 <div class="sidebar-status" style="background: rgba(0,0,0,0.15); margin: 0; padding: 12px 16px;">
@@ -133,14 +137,14 @@
                         <div id="health-score-status" style="font-weight: 700; font-size: 0.95rem; color: var(--success); margin-top: 15px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px;">EXCELLENT</div>
                         
                         <div id="health-alerts-list" class="text-left" style="width: 100%; height: 110px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.78rem; padding: 10px 12px; background: rgba(0,0,0,0.18); border-radius: 6px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px; text-align: left;">
-                            <div style="color: var(--success); text-align: center;">✅ No network anomalies active.</div>
+                            <div style="color: var(--success); text-align: center;">No network anomalies active.</div>
                         </div>
                 </div>
             </div>
 
                 <!-- Subnet Guesses -->
                 <div class="card subnet-suggestion-card">
-                    <h3>💡 Subnet Detections</h3>
+                    <h3>Subnet Detections</h3>
                     <p>Based on passive network chatter, we suggest the following subnets:</p>
                     <div id="subnet-guesses-container" class="subnet-guesses-grid">
                         <div class="no-subnets-msg">No subnets detected yet. Start sniffing and plug into a live network!</div>
@@ -238,7 +242,7 @@
                 <div class="grid-2-col margin-top">
                     <!-- DHCP Diagnostic Card -->
                     <div class="card">
-                        <h3>🔍 DHCP & Rogue Server Detector</h3>
+                        <h3>DHCP & Rogue Server Detector</h3>
                         <p class="card-desc">Broadcasts a DHCP Discover packet to map all active lease servers on this network path.</p>
                         <div class="form-group row">
                             <div class="form-item align-end">
@@ -267,7 +271,7 @@
 
                     <!-- iPerf3 Server Card -->
                     <div class="card">
-                        <h3>🚀 iPerf3 Speed Test Daemon</h3>
+                        <h3>iPerf3 Speed Test Daemon</h3>
                         <p class="card-desc">Toggle the built-in iPerf3 server. Allows testing LAN speeds from your laptop or phone.</p>
                         <div class="form-group-row-2">
                             <div class="form-item">
@@ -282,7 +286,7 @@
                 </div>
 
                 <div class="card margin-top">
-                    <h3>🎬 Remote AV Controller</h3>
+                    <h3>Remote AV Controller</h3>
                     <p class="card-desc">Direct control for PJLink enabled displays/projectors and Wake-on-LAN client systems.</p>
                     <div class="grid-2-col">
                         <!-- PJLink -->
@@ -328,7 +332,7 @@
 
                 <!-- QoS Link Monitor & Logger -->
                 <div class="card margin-top">
-                    <h3>📈 Continuous QoS Link Monitor (Ping & Jitter Logger)</h3>
+                    <h3>Continuous QoS Link Monitor (Ping & Jitter Logger)</h3>
                     <p class="card-desc">Periodically ping a gateway or internet host to monitor link drops, latency spikes, and packet loss. Logs hourly summaries to CSV.</p>
                     
                     <div class="form-group-row-2">
@@ -390,7 +394,7 @@
                 <div class="grid-serial">
                     <!-- Serial Settings & TCP Bridge Controls -->
                     <div class="card">
-                        <h3>🔌 Serial Port Setup</h3>
+                        <h3>Serial Port Setup</h3>
                         <div class="form-group">
                             <label for="serial-port-select">USB Serial Device:</label>
                             <select id="serial-port-select">
@@ -416,7 +420,7 @@
 
                         <hr class="divider">
 
-                        <h3>🌐 Network Telnet Bridge</h3>
+                        <h3>Network Telnet Bridge</h3>
                         <p class="card-desc">Forward a local TCP socket directly to the connected serial port. Allows software (Crestron/Q-SYS) to target the RPi4's IP to interact with hardware serial.</p>
                         
                         <div class="form-group-row-2 margin-top-sm">
@@ -456,7 +460,7 @@
             <!-- TAB 4: INTERFACE MANAGER -->
             <section id="network-tab" class="tab-content">
                 <div class="card">
-                    <h3>⚙️ Linux Interface Management</h3>
+                    <h3>Linux Interface Management</h3>
                     <p class="card-desc">List active network ports. Temporarily configure IP configurations to matching legacy subnets without logging out.</p>
                     <div class="table-responsive">
                         <table>
@@ -481,7 +485,7 @@
                 <div class="grid-2-col margin-top">
                     <!-- DHCP Host Server Card -->
                     <div class="card">
-                        <h3>🏠 DHCP Host Server</h3>
+                        <h3>DHCP Host Server</h3>
                         <p class="card-desc">Lease IP addresses directly from the RPi4 to single target AV hardware components when normal routers are absent.</p>
                         
                         <div class="form-group-row-2">
@@ -497,7 +501,7 @@
 
                     <!-- Cable & DNS Auditor Card -->
                     <div class="card">
-                        <h3>📊 Physical Link & DNS Health Auditor</h3>
+                        <h3>Physical Link & DNS Health Auditor</h3>
                         <p class="card-desc">Validate actual ethernet duplex configuration parameters and lookup latency times.</p>
                         <div class="form-group row">
                             <div class="form-item align-end">
@@ -519,7 +523,7 @@
 
                     <!-- WAN Firewall & Internet Health Check -->
                     <div class="card">
-                        <h3>🌐 WAN Firewall & Internet Health Check</h3>
+                        <h3>WAN Firewall & Internet Health Check</h3>
                         <p class="card-desc">Tests outbound ports and ping routing to identify if IT department firewalls are blocking cloud-managed AV hardware.</p>
                         
                         <div class="form-group row">
@@ -575,6 +579,53 @@
                     </div>
                 </div>
 
+                
+                <!-- Help Modal / User Guide -->
+                <div id="help-modal" class="modal hidden">
+                    <div class="modal-content" style="max-width: 650px; max-height: 80vh; overflow-y: auto;">
+                        <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">System User Guide & Diagnostics Index</h3>
+                        
+                        <div class="help-content" style="font-size: 0.88rem; line-height: 1.6; text-align: left; display: flex; flex-direction: column; gap: 14px; color: var(--text-primary);">
+                            <div>
+                                <strong style="color: var(--accent);">Interface Selection:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Select the active hardware interface (e.g. eth0) to bind all scans and listener tools.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">Passive Discovery:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Intercepts broadcast packets (ARP, DHCP, mDNS, LLDP) passively. Stealth Mode disables active MAC vendor lookups to ensure the box makes zero noise.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">Active Probes (ARP & Ports):</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">"Sweep Subnet" pings the entire CIDR range via fast ARP requests. "Probe Ports" sweeps standard media/automation ports (HTTP, HTTPS, SSH, PJLink, Crestron, etc.) on the target IP.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">DHCP Server Audit:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Broadcasts a discovery packet to audit Gateway routing, DNS details, lease times, and alert you if rogue DHCP servers exist on this link segment.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">Beacon Mode:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Rapidly toggles the physical RPi link LED at 5Hz to identify this specific box on a crowded equipment rack.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">QoS Link Logger:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Continuously pings the destination target, graphing rolling jitter/latency and exporting logs to CSV format.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">CCTV Camera Inspector:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Discovers local ONVIF cameras and tests standard defaults to audit security credentials and RTSP stream feeds.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">Commissioning Report:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Runs a complete network check, logs topology results, and generates a client handover report under the ZAVI branding.</p>
+                            </div>
+                        </div>
+
+                        <div class="modal-actions" style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                            <button id="close-help-btn" class="btn btn-primary" style="width: 100%;">Dismiss Guide</button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Network Config Modals (embedded in page for simplicity) -->
                 <div id="config-modal" class="modal hidden">
                     <div class="modal-content">
@@ -604,7 +655,7 @@
             <!-- TAB: TOPOLOGY MAP -->
             <section id="topology-tab" class="tab-content">
                 <div class="card">
-                    <h3>🗺️ Live Network Topology Map</h3>
+                    <h3>Live Network Topology Map</h3>
                     <p class="card-desc">Visual tree connecting the parent switch to individual interfaces, VLAN tags, and active client hardware nodes.</p>
                     <button id="refresh-topology-btn" class="btn btn-secondary btn-sm margin-bottom-sm">Redraw Map</button>
                     <div style="min-height: 480px; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.18); border-radius: 6px; padding: 20px; overflow: auto; border: 1px solid var(--border-color);">
@@ -618,7 +669,7 @@
                 <!-- IGMP Flood alert banner -->
                 <div id="igmp-flood-alert" class="card hidden" style="background: rgba(255, 159, 67, 0.12); border: 2px solid #ff9f43; margin-bottom: 24px; padding: 18px 24px;">
                     <div style="display: flex; align-items: center; gap: 12px; color: #ff9f43; font-weight: 700; font-size: 1.1rem;">
-                        ⚠️ IGMP MULTICAST FLOOD DETECTED
+                        IGMP MULTICAST FLOOD DETECTED
                     </div>
                     <p style="margin-top: 8px; font-size: 0.9rem; color: var(--text-primary);">
                         High bandwidth multicast stream detected on our interface. Since our host has not sent an IGMP Join request, this port is receiving unsolicited multicast traffic. **IGMP Snooping is likely disabled or misconfigured on the connected switch.**
@@ -626,7 +677,7 @@
                 </div>
 
                 <div class="card">
-                    <h3>📺 Multicast Stream Monitor</h3>
+                    <h3>Multicast Stream Monitor</h3>
                     <p class="card-desc">Real-time bitrates, packet counting, and security warnings for background IGMP groups.</p>
                     <div class="table-responsive">
                         <table>
@@ -654,7 +705,7 @@
                 <div class="card">
                     <div class="card-header">
                         <div>
-                            <h3>📹 ONVIF Camera & CCTV Auditor</h3>
+                            <h3>ONVIF Camera & CCTV Auditor</h3>
                             <p class="card-desc">Discover ONVIF surveillance cameras on the link and probe basic factory default credentials.</p>
                         </div>
                         <button id="run-camera-scan-btn" class="btn btn-primary">Scan & Audit Cameras</button>
@@ -684,7 +735,7 @@
             <!-- TAB: COMMISSIONING REPORT -->
             <section id="report-tab" class="tab-content">
                 <div class="card">
-                    <h3>📋 Site Handover Commissioning Report</h3>
+                    <h3>Site Handover Commissioning Report</h3>
                     <p class="card-desc">Enter project metrics to compile a complete network audit, diagnostic charts, and device list into a print-ready report.</p>
                     
                     <div class="form-group margin-top">

@@ -123,7 +123,7 @@ def _check_credentials(ip: str):
                 # Test connection (timeout 1s)
                 req = opener.open(url, timeout=1.0)
                 if req.getcode() == 200:
-                    return f"⚠️ Vulnerable! Default credentials: {user} / {pwd}"
+                    return f"Vulnerable! Default credentials: {user} / {pwd}"
             except urllib.error.HTTPError as e:
                 # If it's a 401 Unauthorized, credentials failed.
                 # If 404 or other, endpoint might be closed, continue.
@@ -132,6 +132,6 @@ def _check_credentials(ip: str):
             except Exception:
                 pass
                 
-    return "✅ Secure (No default credentials found)"
+    return "Secure (No default credentials found)"
 
 import time
