@@ -1364,9 +1364,10 @@ function drawTopology() {
 
                 // Find eth0 IP address to display
                 let eth0Ip = "No IP Assigned";
-                const eth0 = ifaces.find(i => i.name === "eth0");
-                if (eth0 && eth0.addresses && eth0.addresses.length > 0) {
-                    eth0Ip = eth0.addresses[0];
+                const eth0 = ifaces["eth0"] || Object.values(ifaces)[0];
+                if (eth0) {
+                    if (eth0.ip) eth0Ip = eth0.ip;
+                    else if (eth0.addresses && eth0.addresses.length > 0) eth0Ip = eth0.addresses[0];
                 }
 
                 const rpiText2 = createSVGElement("text", { x: 250, y: 362, "text-anchor": "middle", fill: "var(--text-muted)", "font-size": "11" });
@@ -1597,14 +1598,22 @@ function initResponsiveAndHelp() {
     const helpModal = document.getElementById("help-modal");
     const closeHelpBtn = document.getElementById("close-help-btn");
     
-    if (helpBtn && helpModal && closeHelpBtn) {
+    if (helpBtn && helpModal) {
         helpBtn.addEventListener("click", (e) => {
+            e.preventDefault();
             e.stopPropagation();
             helpModal.classList.remove("hidden");
         });
-        closeHelpBtn.addEventListener("click", () => {
+    }
+    
+    if (closeHelpBtn && helpModal) {
+        closeHelpBtn.addEventListener("click", (e) => {
+            e.preventDefault();
             helpModal.classList.add("hidden");
         });
+    }
+    
+    if (helpModal) {
         helpModal.addEventListener("click", (e) => {
             if (e.target === helpModal) {
                 helpModal.classList.add("hidden");
