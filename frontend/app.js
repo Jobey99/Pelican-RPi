@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initPhase2Features();
     initPhase3Features();
     initPhase4Features();
+    initSpecializedAVSuite();
     
     // Initial fetch of configuration details
     fetchInterfaces();
@@ -1446,6 +1447,143 @@ function drawTopology() {
                     svg.appendChild(devText1);
                 }
             });
+    });
+}
+
+let beaconState = false;
+
+function initSpecializedAVSuite() {
+    const beaconBtn = document.getElementById("toggle-beacon-btn");
+    const wanBtn = document.getElementById("run-wan-health-btn");
+
+    if (beaconBtn) {
+        beaconBtn.addEventListener("click", () => {
+            beaconState = !beaconState;
+            beaconBtn.disabled = true;
+            beaconBtn.innerText = "Toggling...";
+
+            fetch(API_BASE + "/api/hardware/beacon", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ active: beaconState })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.beacon_active) {
+                        beaconBtn.innerText = "Beacon: On";
+                        beaconBtn.className = "btn btn-danger";
+                    } else {
+                        beaconBtn.innerText = "Beacon: Off";
+                        beaconBtn.className = "btn btn-secondary";
+                    }
+                } else {
+                    alert("Failed to toggle beacon: " + data.error);
+                }
+            })
+            .catch(err => alert("Beacon toggle error: " + err))
+            .finally(() => {
+                beaconBtn.disabled = false;
+            });
+        });
+    }
+
+    if (wanBtn) {
+        wanBtn.addEventListener("click", () => {
+            wanBtn.disabled = true;
+            wanBtn.innerText = "Running WAN Audits...";
+
+            const setPending = (prefix) => {
+                document.getElementById(`wan-${prefix}-latency`).innerText = "...";
+                const badge = document.getElementById(`wan-${prefix}-badge`);
+                badge.innerText = "Testing";
+                badge.className = "badge badge-info";
+            };
+            setPending("dns");
+            setPending("https");
+            setPending("ntp");
+            setPending("gw");
+            setPending("ping");
+
+            fetch(API_BASE + "/api/network/wan_health")
+            .then(r => r.json())
+            .then(data => {
+                const updateRow = (prefix, res) => {
+                    const latencyEl = document.getElementById(`wan-${prefix}-latency`);
+                    const badge = document.getElementById(`wan-${prefix}-badge`);
+                    if (res.success) {
+                        latencyEl.innerText = res.latency_ms + " ms";
+                        badge.innerText = "PASS";
+                        badge.className = "badge badge-success";
+                    } else {
+                        latencyEl.innerText = "--";
+                        badge.innerText = "BLOCKED";
+                        badge.className = "badge badge-danger";
+                    }
+                };
+
+                updateRow("dns", data.dns);
+                updateRow("https", data.https);
+                updateRow("ntp", data.ntp);
+                updateRow("gw", data.gateway_ping);
+                updateRow("ping", data.wan_ping);
+            })
+            .catch(err => alert("WAN health check failed: " + err))
+            .finally(() => {
+                wanBtn.disabled = false;
+                wanBtn.innerText = "Run WAN Diagnostic";
+            });
+        });
+    }
+
+    fetchAVNetworkHealth();
+    setInterval(fetchAVNetworkHealth, 5000);
+}
+
+function fetchAVNetworkHealth() {
+    const scoreNum = document.getElementById("health-score-num");
+    const ringFill = document.getElementById("health-ring-fill");
+    const statusText = document.getElementById("health-score-status");
+    const alertsList = document.getElementById("health-alerts-list");
+
+    if (!scoreNum) return;
+
+    fetch(API_BASE + "/api/network/health")
+    .then(r => r.json())
+    .then(data => {
+        const score = data.score;
+        scoreNum.innerText = score;
+
+        const circumference = 326.7;
+        const offset = circumference - (circumference * score) / 100;
+        ringFill.style.strokeDashoffset = offset;
+
+        if (score >= 90) {
+            ringFill.style.stroke = "var(--success)";
+            statusText.style.color = "var(--success)";
+            statusText.innerText = "EXCELLENT";
+        } else if (score >= 70) {
+            ringFill.style.stroke = "var(--warning)";
+            statusText.style.color = "var(--warning)";
+            statusText.innerText = "FAIR / WARNINGS";
+        } else {
+            ringFill.style.stroke = "var(--danger)";
+            statusText.style.color = "var(--danger)";
+            statusText.innerText = "POOR / ACTION NEEDED";
+        }
+
+        if (data.alerts && data.alerts.length > 0) {
+            alertsList.innerHTML = data.alerts.map(alert => `
+                <div style="padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.04); color: ${alert.includes('❌') ? 'var(--danger)' : 'var(--warning)'};">
+                    ${alert}
+                </div>
+            `).join("");
+        } else {
+            alertsList.innerHTML = `<div style="color: var(--success); text-align: center; margin-top: 35px;">✅ No network anomalies active.</div>`;
+        }
+    })
+    .catch(err => {
+        console.error("Failed to fetch network health:", err);
     });
 }
 

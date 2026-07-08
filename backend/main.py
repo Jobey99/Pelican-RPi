@@ -104,6 +104,9 @@ class PingTestRequest(BaseModel):
     count: int = 8
     interface: str
 
+class BeaconRequest(BaseModel):
+    active: bool
+
 
 # --- API ROUTES ---
 
@@ -499,6 +502,185 @@ async def websocket_endpoint(websocket: WebSocket):
         pass
     finally:
         serial_bridge.unregister_websocket(websocket)
+
+# --- SPECIALIZED AV FIELD SUITE ROUTES ---
+
+@app.get("/api/network/wan_health")
+def get_wan_health():
+    import socket
+    import time
+    import platform
+    import subprocess
+    
+    # 1. DNS check (Port 53 google.com lookup)
+    dns_success = False
+    dns_time = 0.0
+    start = time.time()
+    try:
+        socket.gethostbyname("google.com")
+        dns_time = round((time.time() - start) * 1000, 2)
+        dns_success = True
+    except Exception:
+        pass
+
+    # 2. HTTP/HTTPS Web access check (Port 443 socket connect to www.google.com)
+    https_success = False
+    https_time = 0.0
+    start = time.time()
+    try:
+        s = socket.create_connection(("www.google.com", 443), timeout=2.0)
+        s.close()
+        https_time = round((time.time() - start) * 1000, 2)
+        https_success = True
+    except Exception:
+        pass
+
+    # 3. NTP Time check (Port 123 socket connect check to pool.ntp.org)
+    ntp_success = False
+    ntp_time = 0.0
+    start = time.time()
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(2.0)
+        msg = b'\x1b' + 47 * b'\0'
+        s.sendto(msg, ("pool.ntp.org", 123))
+        data, server = s.recvfrom(1024)
+        ntp_time = round((time.time() - start) * 1000, 2)
+        ntp_success = True
+        s.close()
+    except Exception:
+        pass
+
+    # 4. Gateway Ping
+    gateway_ip = "192.168.0.1"
+    try:
+        if platform.system().lower() != "windows":
+            out = subprocess.check_output("ip route show | grep default", shell=True, text=True)
+            parts = out.split()
+            if "via" in parts:
+                gateway_ip = parts[parts.index("via") + 1]
+    except Exception:
+        pass
+
+    gateway_ping_success = False
+    gateway_ping_time = 0.0
+    system_os = platform.system().lower()
+    ping_cmd = ["ping", "-n", "1", "-w", "1000", gateway_ip] if system_os == "windows" else ["ping", "-c", "1", "-W", "1", gateway_ip]
+    try:
+        start = time.time()
+        res = subprocess.run(ping_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=2.0)
+        if res.returncode == 0:
+            gateway_ping_time = round((time.time() - start) * 1000, 2)
+            gateway_ping_success = True
+    except Exception:
+        pass
+
+    # 5. WAN Ping (1.1.1.1)
+    wan_ping_success = False
+    wan_ping_time = 0.0
+    wan_ping_cmd = ["ping", "-n", "1", "-w", "1000", "1.1.1.1"] if system_os == "windows" else ["ping", "-c", "1", "-W", "1", "1.1.1.1"]
+    try:
+        start = time.time()
+        res = subprocess.run(wan_ping_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=2.0)
+        if res.returncode == 0:
+            wan_ping_time = round((time.time() - start) * 1000, 2)
+            wan_ping_success = True
+    except Exception:
+        pass
+
+    return {
+        "dns": {"success": dns_success, "latency_ms": dns_time},
+        "https": {"success": https_success, "latency_ms": https_time},
+        "ntp": {"success": ntp_success, "latency_ms": ntp_time},
+        "gateway_ping": {"success": gateway_ping_success, "target_ip": gateway_ip, "latency_ms": gateway_ping_time},
+        "wan_ping": {"success": wan_ping_success, "latency_ms": wan_ping_time}
+    }
+
+beacon_active = False
+
+@app.post("/api/hardware/beacon")
+def toggle_hardware_beacon(req: BeaconRequest):
+    global beacon_active
+    import platform
+    import subprocess
+    
+    beacon_active = req.active
+    system_os = platform.system().lower()
+    
+    if system_os == "windows":
+        return {"success": True, "beacon_active": beacon_active, "message": f"Simulated beacon state: {beacon_active}"}
+        
+    try:
+        if beacon_active:
+            subprocess.run("echo timer > /sys/class/leds/eth0:green/trigger", shell=True)
+            subprocess.run("echo 100 > /sys/class/leds/eth0:green/delay_on", shell=True)
+            subprocess.run("echo 100 > /sys/class/leds/eth0:green/delay_off", shell=True)
+            if os.path.exists("/sys/class/leds/eth0:amber/trigger"):
+                subprocess.run("echo timer > /sys/class/leds/eth0:amber/trigger", shell=True)
+                subprocess.run("echo 100 > /sys/class/leds/eth0:amber/delay_on", shell=True)
+                subprocess.run("echo 100 > /sys/class/leds/eth0:amber/delay_off", shell=True)
+        else:
+            subprocess.run("echo netdev > /sys/class/leds/eth0:green/trigger", shell=True)
+            subprocess.run("echo eth0 > /sys/class/leds/eth0:green/device_name", shell=True)
+            subprocess.run("echo link tx rx > /sys/class/leds/eth0:green/link", shell=True)
+            if os.path.exists("/sys/class/leds/eth0:amber/trigger"):
+                subprocess.run("echo netdev > /sys/class/leds/eth0:amber/trigger", shell=True)
+                subprocess.run("echo eth0 > /sys/class/leds/eth0:amber/device_name", shell=True)
+                subprocess.run("echo link tx rx > /sys/class/leds/eth0:amber/link", shell=True)
+                
+        return {"success": True, "beacon_active": beacon_active, "message": f"Hardware beacon active state: {beacon_active}"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.get("/api/network/health")
+def get_av_network_health():
+    score = 100
+    alerts = []
+
+    # 1. IP Conflict check
+    conflicts = conflict_detector.get_conflicts()
+    if conflicts:
+        score -= 35
+        for c in conflicts:
+            alerts.append(f"❌ IP Conflict Active: IP {c.get('ip')} is bound to two separate MAC addresses!")
+
+    # 2. Rogue DHCP Server check
+    dhcp_res = detect_dhcp_servers("eth0", timeout=1)
+    if dhcp_res.get("success"):
+        servers = dhcp_res.get("servers", [])
+        if len(servers) > 1:
+            score -= 30
+            server_ips = ", ".join([s.get("server_ip") for s in servers])
+            alerts.append(f"❌ Rogue DHCP Conflict: {len(servers)} DHCP servers active ({server_ips})!")
+
+    # 3. IGMP Multicast Flooding check
+    multicast_status = multicast_auditor.get_status()
+    if multicast_status.get("flooding_detected"):
+        score -= 20
+        alerts.append("⚠️ IGMP Flooding Detected: Multicast stream packets are flooding this port! (Enable IGMP Snooping & Querier on the switch).")
+
+    # 4. Interface speed/duplex negotiation warning
+    cable_res = audit_cable_link("eth0")
+    if cable_res.get("success") and cable_res.get("warning"):
+        score -= 15
+        alerts.append(f"⚠️ Link Negotiation Issue: {cable_res.get('warning_message')}")
+
+    # 5. DNS health resolution
+    dns_res = measure_dns_latency()
+    if not dns_res.get("success"):
+        score -= 15
+        alerts.append("❌ Local DNS Resolution Failed: Gateway DNS is unreachable or queries are failing.")
+    elif dns_res.get("latency_ms") > 150:
+        score -= 10
+        alerts.append(f"⚠️ Slow DNS Lookup: Resolve time is slow ({dns_res.get('latency_ms')} ms). Check DNS WAN configurations.")
+
+    score = max(0, score)
+
+    return {
+        "score": score,
+        "alerts": alerts,
+        "status": "Excellent" if score >= 90 else "Good" if score >= 75 else "Fair" if score >= 50 else "Poor"
+    }
 
 # --- STATIC FILES SERVING ---
 

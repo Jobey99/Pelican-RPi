@@ -56,6 +56,38 @@ class PassiveSniffer:
         elif pkt.haslayer(IP):
             ip = pkt[IP].src
             protocol = "IP"
+            
+            # Audit AV/IT ports
+            if pkt.haslayer(UDP):
+                sport = pkt[UDP].sport
+                dport = pkt[UDP].dport
+                if 14300 <= dport <= 14600 or 14300 <= sport <= 14600:
+                    protocol = "Dante"
+                elif dport == 5004 or sport == 5004:
+                    protocol = "AES67"
+                elif dport == 5961 or sport == 5961 or (5960 <= dport <= 5970):
+                    protocol = "NDI"
+                elif dport == 6454 or sport == 6454:
+                    protocol = "Art-Net"
+                elif dport == 5568 or sport == 5568:
+                    protocol = "sACN"
+                elif dport == 3702 or sport == 3702:
+                    protocol = "ONVIF (WS-Disc)"
+                elif dport == 4352 or sport == 4352:
+                    protocol = "PJLink"
+                elif dport in [41794, 41795] or sport in [41794, 41795]:
+                    protocol = "Crestron CIP"
+                elif dport == 5353 or sport == 5353:
+                    protocol = "mDNS"
+            else:
+                from scapy.all import TCP
+                if pkt.haslayer(TCP):
+                    sport = pkt[TCP].sport
+                    dport = pkt[TCP].dport
+                    if dport == 554 or sport == 554:
+                        protocol = "RTSP Video"
+                    elif dport in [41794, 41795] or sport in [41794, 41795]:
+                        protocol = "Crestron CIP"
 
         # 4. Parse DHCP (Great for Hostnames!)
         if pkt.haslayer(DHCP):

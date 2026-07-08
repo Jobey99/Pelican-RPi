@@ -75,40 +75,65 @@
                     <label for="sniffer-interface-select">Interface:</label>
                     <select id="sniffer-interface-select">
                         <option value="eth0">eth0 (Ethernet)</option>
-                    </select>
                     <button id="toggle-sniffer-btn" class="btn btn-primary">Start Sniffing</button>
                     <button id="toggle-stealth-btn" class="btn btn-secondary">Stealth: Off</button>
+                    <button id="toggle-beacon-btn" class="btn btn-secondary">Beacon: Off</button>
                 </div>
             </header>
 
             <!-- TAB 1: PASSIVE DISCOVERY -->
             <section id="dashboard-tab" class="tab-content active">
-                <!-- Switch Port Mapper Card (LLDP/CDP) -->
-                <div class="card" style="border-color: rgba(var(--accent-rgb), 0.25);">
-                    <h3>🔌 Active Switch Port Mapping (LLDP/CDP)</h3>
-                    <p class="card-desc">Decodes background switch discovery packets to identify switch interface and VLAN assignments.</p>
-                    <div class="grid-2-col" style="grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; font-family: var(--font-mono); font-size: 0.95rem;">
-                        <div class="sidebar-status" style="background: rgba(0,0,0,0.15);">
-                            <span class="text-muted" style="font-size: 0.8rem; font-family: var(--font-sans); font-weight: 600;">SWITCH NAME</span>
-                            <span id="lldp-switch-name" style="font-weight: 700;">Listening...</span>
+                <div class="grid-2-col" style="grid-template-columns: 2fr 1.2fr; gap: 24px; margin-bottom: 24px; align-items: stretch;">
+                    <!-- Switch Port Mapper Card (LLDP/CDP) -->
+                    <div class="card" style="border-color: rgba(var(--accent-rgb), 0.25); margin: 0; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <h3>🔌 Switch Port Mapping (LLDP/CDP)</h3>
+                            <p class="card-desc">Decodes background switch discovery packets to identify switch interface and VLAN assignments.</p>
+                            <div class="grid-2-col" style="grid-template-columns: 1fr 1fr; gap: 16px; font-family: var(--font-mono); font-size: 0.95rem; margin-top: 15px;">
+                                <div class="sidebar-status" style="background: rgba(0,0,0,0.15); margin: 0; padding: 12px 16px;">
+                                    <span class="text-muted" style="font-size: 0.8rem; font-family: var(--font-sans); font-weight: 600;">SWITCH NAME</span>
+                                    <span id="lldp-switch-name" style="font-weight: 700;">Listening...</span>
+                                </div>
+                                <div class="sidebar-status" style="background: rgba(0,0,0,0.15); margin: 0; padding: 12px 16px;">
+                                    <span class="text-muted" style="font-size: 0.8rem; font-family: var(--font-sans); font-weight: 600;">PORT ID</span>
+                                    <span id="lldp-port-id" style="font-weight: 700; color: var(--accent);">Listening...</span>
+                                </div>
+                                <div class="sidebar-status" style="background: rgba(0,0,0,0.15); margin: 0; padding: 12px 16px;">
+                                    <span class="text-muted" style="font-size: 0.8rem; font-family: var(--font-sans); font-weight: 600;">VLAN ID</span>
+                                    <span id="lldp-vlan" style="font-weight: 700; color: var(--success);">Listening...</span>
+                                </div>
+                                <div class="sidebar-status" style="background: rgba(0,0,0,0.15); margin: 0; padding: 12px 16px;">
+                                    <span class="text-muted" style="font-size: 0.8rem; font-family: var(--font-sans); font-weight: 600;">MANAGEMENT IP</span>
+                                    <span id="lldp-ip" style="font-weight: 700;">Listening...</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="sidebar-status" style="background: rgba(0,0,0,0.15);">
-                            <span class="text-muted" style="font-size: 0.8rem; font-family: var(--font-sans); font-weight: 600;">SWITCH PORT ID</span>
-                            <span id="lldp-port-id" style="font-weight: 700; color: var(--accent);">Listening...</span>
-                        </div>
-                        <div class="sidebar-status" style="background: rgba(0,0,0,0.15);">
-                            <span class="text-muted" style="font-size: 0.8rem; font-family: var(--font-sans); font-weight: 600;">VLAN ID</span>
-                            <span id="lldp-vlan" style="font-weight: 700; color: var(--success);">Listening...</span>
-                        </div>
-                        <div class="sidebar-status" style="background: rgba(0,0,0,0.15);">
-                            <span class="text-muted" style="font-size: 0.8rem; font-family: var(--font-sans); font-weight: 600;">MANAGEMENT IP</span>
-                            <span id="lldp-ip" style="font-weight: 700;">Listening...</span>
+                        <div style="margin-top: 18px; font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 12px;">
+                            <span>Source Protocol: <strong id="lldp-proto" style="color: var(--text-secondary);">None</strong></span>
+                            <span id="lldp-model" style="font-style: italic;"></span>
                         </div>
                     </div>
-                    <div style="margin-top: 14px; font-size: 0.82rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center;">
-                        <span>Source Protocol: <strong id="lldp-proto" style="color: var(--text-secondary);">None</strong></span>
-                        <span id="lldp-model" style="font-style: italic;"></span>
-                    </div>
+
+                    <!-- AV Network Health Score Card -->
+                    <div class="card" style="margin: 0; display: flex; flex-direction: column; align-items: center; text-align: center; border-color: rgba(var(--accent-rgb), 0.25);">
+                        <h3 style="align-self: flex-start; margin-bottom: 5px;">📊 AV Network Health</h3>
+                        <p class="card-desc" style="align-self: flex-start; text-align: left; margin-bottom: 20px;">Continuous analysis of link conflicts, packet drops, and active diagnostics.</p>
+                        
+                        <div class="health-circle-container" style="position: relative; width: 120px; height: 120px;">
+                            <svg class="health-ring" width="120" height="120" style="transform: rotate(-90deg);">
+                                <circle class="health-ring-bg" cx="60" cy="60" r="52" fill="transparent" stroke="rgba(255,255,255,0.06)" stroke-width="8"></circle>
+                                <circle id="health-ring-fill" class="health-ring-fill" cx="60" cy="60" r="52" fill="transparent" stroke="var(--success)" stroke-width="8" stroke-dasharray="326.7" stroke-dashoffset="0" style="transition: stroke-dashoffset 0.6s ease-in-out, stroke 0.6s ease-in-out;"></circle>
+                            </svg>
+                            <div class="health-score-value" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: var(--font-sans); font-weight: 700; font-size: 1.6rem; color: #fff;">
+                                <span id="health-score-num">100</span><span class="pct" style="font-size: 0.95rem; font-weight: 600; color: var(--text-muted);">%</span>
+                            </div>
+                        </div>
+                        
+                        <div id="health-score-status" style="font-weight: 700; font-size: 0.95rem; color: var(--success); margin-top: 15px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px;">EXCELLENT</div>
+                        
+                        <div id="health-alerts-list" class="text-left" style="width: 100%; height: 110px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.78rem; padding: 10px 12px; background: rgba(0,0,0,0.18); border-radius: 6px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 6px; text-align: left;">
+                            <div style="color: var(--success); text-align: center;">✅ No network anomalies active.</div>
+                        </div>
                 </div>
 
                 <!-- Subnet Guesses -->
@@ -488,6 +513,63 @@
                             </div>
                         </div>
                         <div id="diag-link-warning" class="status-msg margin-top-sm text-muted">Run diagnostics to begin auditing links.</div>
+                    </div>
+
+                    <!-- WAN Firewall & Internet Health Check -->
+                    <div class="card">
+                        <h3>🌐 WAN Firewall & Internet Health Check</h3>
+                        <p class="card-desc">Tests outbound ports and ping routing to identify if IT department firewalls are blocking cloud-managed AV hardware.</p>
+                        
+                        <div class="form-group row">
+                            <div class="form-item align-end">
+                                <button id="run-wan-health-btn" class="btn btn-primary">Run WAN Diagnostic</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive margin-top" style="font-family: var(--font-mono); font-size: 0.88rem;">
+                            <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid var(--border-color);">
+                                        <th style="padding: 10px 8px;">Outbound Test Target</th>
+                                        <th style="padding: 10px 8px;">Standard Port</th>
+                                        <th style="padding: 10px 8px;">Measured Latency</th>
+                                        <th style="padding: 10px 8px; text-align: right;">Firewall Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid var(--border-color);">
+                                        <td style="padding: 10px 8px;"><strong>DNS Lookup (google.com)</strong></td>
+                                        <td style="padding: 10px 8px;">UDP 53</td>
+                                        <td id="wan-dns-latency" style="padding: 10px 8px;">--</td>
+                                        <td style="padding: 10px 8px; text-align: right;"><span id="wan-dns-badge" class="badge badge-off">Not Run</span></td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid var(--border-color);">
+                                        <td style="padding: 10px 8px;"><strong>Web Traffic Access (www.google.com)</strong></td>
+                                        <td style="padding: 10px 8px;">TCP 443 (HTTPS)</td>
+                                        <td id="wan-https-latency" style="padding: 10px 8px;">--</td>
+                                        <td style="padding: 10px 8px; text-align: right;"><span id="wan-https-badge" class="badge badge-off">Not Run</span></td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid var(--border-color);">
+                                        <td style="padding: 10px 8px;"><strong>NTP Time Sync (pool.ntp.org)</strong></td>
+                                        <td style="padding: 10px 8px;">UDP 123</td>
+                                        <td id="wan-ntp-latency" style="padding: 10px 8px;">--</td>
+                                        <td style="padding: 10px 8px; text-align: right;"><span id="wan-ntp-badge" class="badge badge-off">Not Run</span></td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid var(--border-color);">
+                                        <td style="padding: 10px 8px;"><strong>Local Gateway Ping</strong></td>
+                                        <td style="padding: 10px 8px;">ICMP (Ping)</td>
+                                        <td id="wan-gw-latency" style="padding: 10px 8px;">--</td>
+                                        <td style="padding: 10px 8px; text-align: right;"><span id="wan-gw-badge" class="badge badge-off">Not Run</span></td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid var(--border-color);">
+                                        <td style="padding: 10px 8px;"><strong>Outbound Cloud Ping (1.1.1.1)</strong></td>
+                                        <td style="padding: 10px 8px;">ICMP (Ping)</td>
+                                        <td id="wan-ping-latency" style="padding: 10px 8px;">--</td>
+                                        <td style="padding: 10px 8px; text-align: right;"><span id="wan-ping-badge" class="badge badge-off">Not Run</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 

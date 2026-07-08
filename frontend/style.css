@@ -727,3 +727,43 @@ tr:hover td {
 .form-item { display: flex; flex-direction: column; gap: 6px; }
 .flex-row { flex-direction: row; }
 .font-mono { font-family: var(--font-mono); }
+
+/* AV Health Gauge & Alerts */
+.health-circle-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.health-ring {
+    transform: rotate(-90deg);
+}
+.health-ring-bg {
+    fill: transparent;
+    stroke: rgba(255, 255, 255, 0.05);
+    stroke-width: 8px;
+}
+.health-ring-fill {
+    fill: transparent;
+    stroke-width: 8px;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.8s ease;
+}
+.health-score-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: #fff;
+    font-family: var(--font-sans);
+    letter-spacing: -0.5px;
+}
+.health-score-value .pct {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-muted);
+}

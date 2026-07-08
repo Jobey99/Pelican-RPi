@@ -74,6 +74,7 @@ class MulticastAuditor:
                 if now - stream["last_seen"] < 10:
                     active_streams.append({
                         "ip": stream["ip"],
+                        "protocol": stream.get("protocol", "UDP Multicast"),
                         "bandwidth_mbps": stream["bandwidth_mbps"],
                         "packet_count": stream["packet_count"],
                         "flooding": stream["flooding"],
@@ -109,13 +110,30 @@ class MulticastAuditor:
             return
             
         dst_ip = pkt[IP].dst
+        dport = pkt[UDP].dport
         pkt_len = len(pkt)
+        
+        # Categorize protocol
+        proto = "UDP Multicast"
+        if 14300 <= dport <= 14600:
+            proto = "Dante"
+        elif dport == 5004:
+            proto = "AES67"
+        elif dport == 5961 or (5960 <= dport <= 5970):
+            proto = "NDI"
+        elif dport == 6454:
+            proto = "Art-Net"
+        elif dport == 5568:
+            proto = "sACN"
+        elif dst_ip.startswith("224.0.0.251") or dport == 5353:
+            proto = "mDNS"
         
         with self.lock:
             self.bytes_counter[dst_ip] += pkt_len
             if dst_ip not in self.streams:
                 self.streams[dst_ip] = {
                     "ip": dst_ip,
+                    "protocol": proto,
                     "bandwidth_mbps": 0.0,
                     "packet_count": 1,
                     "flooding": False,
@@ -123,3 +141,4 @@ class MulticastAuditor:
                 }
             else:
                 self.streams[dst_ip]["packet_count"] += 1
+                self.streams[dst_ip]["protocol"] = proto
