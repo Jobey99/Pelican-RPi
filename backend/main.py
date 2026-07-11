@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 # Import custom modules
-from network_manager import get_interfaces, set_interface_ip_runtime, set_interface_dhcp_runtime, arp_scan
+from network_manager import get_interfaces, set_interface_ip_runtime, set_interface_dhcp_runtime, arp_scan, scan_wifi, connect_wifi, run_wifi_security_audit, toggle_systemd_autostart, is_systemd_enabled
 from sniffer import PassiveSniffer
 from serial_bridge import SerialBridge
 from dhcp_diag import detect_dhcp_servers
