@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initPhase4Features();
     initSpecializedAVSuite();
     initResponsiveAndHelp();
+    initSettingsAndWifi();
     
     // Initial fetch of configuration details
     fetchInterfaces();
@@ -1635,6 +1636,295 @@ function initResponsiveAndHelp() {
         navBtns.forEach(btn => {
             btn.addEventListener("click", () => {
                 glassContainer.classList.remove("sidebar-open");
+            });
+        });
+    }
+}
+
+
+/* --- SETTINGS, WI-FI MANAGER, THEMES, AND SECURITY AUDITOR SUITE --- */
+
+function initSettingsAndWifi() {
+    // A. Theme engine loader and persistent selection
+    const themeSelect = document.getElementById("theme-select");
+    const activeTheme = localStorage.getItem("zavi-theme") || "theme-slate";
+    document.body.className = activeTheme;
+    if (themeSelect) {
+        themeSelect.value = activeTheme;
+        themeSelect.addEventListener("change", () => {
+            const selected = themeSelect.value;
+            document.body.className = selected;
+            localStorage.setItem("zavi-theme", selected);
+        });
+    }
+
+    // B. Wi-Fi Scanner and Join logic
+    const scanWifiBtn = document.getElementById("scan-wifi-btn");
+    const wifiTableBody = document.getElementById("wifi-table-body");
+    const wifiStatusText = document.getElementById("wifi-status-text");
+    
+    const wifiConnectModal = document.getElementById("wifi-connect-modal");
+    const wifiModalSsid = document.getElementById("wifi-modal-ssid");
+    const wifiModalPassword = document.getElementById("wifi-modal-password");
+    const closeWifiModalBtn = document.getElementById("close-wifi-modal-btn");
+    const submitWifiConnectBtn = document.getElementById("submit-wifi-connect-btn");
+    
+    const auditSsidSelect = document.getElementById("audit-ssid-select");
+
+    // Fetch current status dynamically (simulated or passive checks)
+    function checkWifiStatus() {
+        fetch(API_BASE + "/api/interfaces")
+            .then(r => r.json())
+            .then(ifaces => {
+                const wlan = ifaces["wlan0"];
+                if (wlan && wlan.status === "up" && wlan.ip) {
+                    wifiStatusText.innerText = `Connected (IP: ${wlan.ip})`;
+                    wifiStatusText.className = "text-success";
+                } else {
+                    wifiStatusText.innerText = "Disconnected";
+                    wifiStatusText.className = "text-warning";
+                }
+            })
+            .catch(() => {
+                wifiStatusText.innerText = "Unavailable";
+                wifiStatusText.className = "text-muted";
+            });
+    }
+    
+    checkWifiStatus();
+    setInterval(checkWifiStatus, 8000);
+
+    // Wi-Fi Scan Trigger
+    if (scanWifiBtn && wifiTableBody) {
+        scanWifiBtn.addEventListener("click", () => {
+            scanWifiBtn.disabled = true;
+            scanWifiBtn.innerText = "Scanning Link...";
+            wifiTableBody.innerHTML = `<tr><td colspan="4" class="text-center">Scanning Wi-Fi channels... Please wait.</td></tr>`;
+            
+            fetch(API_BASE + "/api/wifi/scan")
+                .then(r => r.json())
+                .then(data => {
+                    scanWifiBtn.disabled = false;
+                    scanWifiBtn.innerText = "Scan Wi-Fi Networks";
+                    
+                    if (data.success && data.networks && data.networks.length > 0) {
+                        wifiTableBody.innerHTML = data.networks.map(n => `
+                            <tr>
+                                <td><strong>${n.ssid}</strong></td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="width: 60px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; border: 1px solid var(--border-color);">
+                                            <div style="width: ${n.signal}%; height: 100%; background: var(--accent);"></div>
+                                        </div>
+                                        <span>${n.signal}%</span>
+                                    </div>
+                                </td>
+                                <td><span style="font-size: 0.8rem; color: var(--text-secondary);">${n.security}</span></td>
+                                <td style="text-align: right;">
+                                    <button class="btn btn-secondary btn-sm join-wifi-trigger" data-ssid="${n.ssid}">Join</button>
+                                </td>
+                            </tr>
+                        `).join("");
+                        
+                        // Populate Pentest Audit Select options
+                        if (auditSsidSelect) {
+                            auditSsidSelect.innerHTML = `<option value="">-- Select SSID --</option>` + 
+                                data.networks.map(n => `<option value="${n.ssid}">${n.ssid}</option>`).join("");
+                        }
+                        
+                        // Bind Join triggers
+                        document.querySelectorAll(".join-wifi-trigger").forEach(btn => {
+                            btn.addEventListener("click", () => {
+                                const targetSsid = btn.getAttribute("data-ssid");
+                                if (wifiConnectModal && wifiModalSsid) {
+                                    wifiModalSsid.innerText = targetSsid;
+                                    wifiModalPassword.value = "";
+                                    wifiConnectModal.classList.remove("hidden");
+                                }
+                            });
+                        });
+                    } else {
+                        wifiTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-warning">No networks found or scan timed out. (${data.error || "Check interfaces"})</td></tr>`;
+                    }
+                })
+                .catch(err => {
+                    scanWifiBtn.disabled = false;
+                    scanWifiBtn.innerText = "Scan Wi-Fi Networks";
+                    wifiTableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Scan Error: ${err}</td></tr>`;
+                });
+        });
+    }
+
+    // Modal Close
+    if (closeWifiModalBtn && wifiConnectModal) {
+        closeWifiModalBtn.addEventListener("click", () => {
+            wifiConnectModal.classList.add("hidden");
+        });
+    }
+
+    // Modal Submit Connection
+    if (submitWifiConnectBtn && wifiConnectModal && wifiModalPassword) {
+        submitWifiConnectBtn.addEventListener("click", () => {
+            const ssid = wifiModalSsid.innerText;
+            const pwd = wifiModalPassword.value;
+            
+            submitWifiConnectBtn.disabled = true;
+            submitWifiConnectBtn.innerText = "Associating...";
+            
+            fetch(API_BASE + "/api/wifi/connect", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ssid: ssid, password: pwd })
+            })
+            .then(r => r.json())
+            .then(data => {
+                submitWifiConnectBtn.disabled = false;
+                submitWifiConnectBtn.innerText = "Connect";
+                wifiConnectModal.classList.add("hidden");
+                
+                if (data.success) {
+                    alert(data.message);
+                    checkWifiStatus();
+                } else {
+                    alert(`Connection Failed: ${data.error}`);
+                }
+            })
+            .catch(err => {
+                submitWifiConnectBtn.disabled = false;
+                submitWifiConnectBtn.innerText = "Connect";
+                alert(`Error: ${err}`);
+            });
+        });
+    }
+
+    // C. Systemd Autostart state sync
+    const autostartCheckbox = document.getElementById("autostart-toggle-checkbox");
+    if (autostartCheckbox) {
+        // Sync state on load
+        fetch(API_BASE + "/api/system/autostart")
+            .then(r => r.json())
+            .then(data => {
+                autostartCheckbox.checked = data.enabled;
+            })
+            .catch(() => {});
+            
+        // Handle change toggle
+        autostartCheckbox.addEventListener("change", () => {
+            const enable = autostartCheckbox.checked;
+            fetch(API_BASE + "/api/system/autostart", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ enable: enable })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) {
+                    autostartCheckbox.checked = !enable; // revert
+                    alert(`Failed to toggle autostart: ${data.error}`);
+                }
+            })
+            .catch(() => {
+                autostartCheckbox.checked = !enable; // revert
+            });
+        });
+    }
+
+    // D. Headless Power Commands
+    const rebootBtn = document.getElementById("system-reboot-btn");
+    const shutdownBtn = document.getElementById("system-shutdown-btn");
+    
+    if (rebootBtn) {
+        rebootBtn.addEventListener("click", () => {
+            if (confirm("Are you sure you want to reboot the Raspberry Pi? This will disconnect the server temporarily.")) {
+                fetch(API_BASE + "/api/system/power", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "reboot" })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(() => {});
+            }
+        });
+    }
+    
+    if (shutdownBtn) {
+        shutdownBtn.addEventListener("click", () => {
+            if (confirm("WARNING: Are you sure you want to shut down the Raspberry Pi? You will have to physically cycle the power to turn it back on.")) {
+                fetch(API_BASE + "/api/system/power", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "shutdown" })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(() => {});
+            }
+        });
+    }
+
+    // E. Advanced Mode & Pentest Security Auditor
+    const securityModeToggle = document.getElementById("security-mode-toggle");
+    const securityAuditorPanel = document.getElementById("security-auditor-panel");
+    const runSecurityAuditBtn = document.getElementById("run-security-audit-btn");
+    const auditTerminalCard = document.getElementById("audit-terminal-card");
+    const auditTerminalOutput = document.getElementById("audit-terminal-output");
+
+    if (securityModeToggle && securityAuditorPanel) {
+        securityModeToggle.addEventListener("change", () => {
+            if (securityModeToggle.checked) {
+                securityAuditorPanel.classList.remove("hidden");
+            } else {
+                securityAuditorPanel.classList.add("hidden");
+            }
+        });
+    }
+
+    if (runSecurityAuditBtn && auditSsidSelect && auditTerminalOutput && auditTerminalCard) {
+        runSecurityAuditBtn.addEventListener("click", () => {
+            const ssid = auditSsidSelect.value;
+            if (!ssid) {
+                alert("Please select a target scanned network SSID first.");
+                return;
+            }
+            
+            runSecurityAuditBtn.disabled = true;
+            runSecurityAuditBtn.innerText = "Auditing Target...";
+            auditTerminalCard.classList.remove("hidden");
+            
+            auditTerminalOutput.innerHTML = `[SYSTEM] Spawning Security Auditor process...\n[SYSTEM] Targeting SSID: '${ssid}'\n[SYSTEM] Commencing scans...`;
+            
+            fetch(API_BASE + "/api/wifi/audit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ssid: ssid })
+            })
+            .then(r => r.json())
+            .then(data => {
+                runSecurityAuditBtn.disabled = false;
+                runSecurityAuditBtn.innerText = "Start Audit Scan";
+                
+                if (data.success) {
+                    auditTerminalOutput.innerHTML = data.logs;
+                    if (data.vulnerable) {
+                        auditTerminalOutput.style.color = "#ff453a"; // vibrant warning red
+                    } else {
+                        auditTerminalOutput.style.color = "var(--success)"; // success green
+                    }
+                } else {
+                    auditTerminalOutput.innerHTML = `[ERROR] Audit Failed: ${data.error}`;
+                    auditTerminalOutput.style.color = "#ff453a";
+                }
+            })
+            .catch(err => {
+                runSecurityAuditBtn.disabled = false;
+                runSecurityAuditBtn.innerText = "Start Audit Scan";
+                auditTerminalOutput.innerHTML = `[ERROR] Fetch Error: ${err}`;
+                auditTerminalOutput.style.color = "#ff453a";
             });
         });
     }

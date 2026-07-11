@@ -632,6 +632,62 @@ def toggle_hardware_beacon(req: BeaconRequest):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+
+# --- WIFI AND SYSTEM SETTINGS ENDPOINTS ---
+
+class WifiConnectReq(BaseModel):
+    ssid: str
+    password: str = ""
+
+class WifiAuditReq(BaseModel):
+    ssid: str
+
+class AutostartReq(BaseModel):
+    enable: bool
+
+class SystemPowerReq(BaseModel):
+    action: str # reboot / shutdown
+
+@app.get("/api/wifi/scan")
+def get_wifi_scan():
+    return scan_wifi()
+
+@app.post("/api/wifi/connect")
+def post_wifi_connect(req: WifiConnectReq):
+    return connect_wifi(req.ssid, req.password)
+
+@app.post("/api/wifi/audit")
+def post_wifi_audit(req: WifiAuditReq):
+    return run_wifi_security_audit(req.ssid)
+
+@app.get("/api/system/autostart")
+def get_autostart_status():
+    return {"enabled": is_systemd_enabled()}
+
+@app.post("/api/system/autostart")
+def post_autostart_toggle(req: AutostartReq):
+    return toggle_systemd_autostart(req.enable)
+
+@app.post("/api/system/power")
+def post_system_power(req: SystemPowerReq):
+    if req.action == "reboot":
+        def run_reboot():
+            import time
+            time.sleep(2)
+            os.system("sudo reboot")
+        import threading
+        threading.Thread(target=run_reboot).start()
+        return {"success": True, "message": "System reboot command sent. Reconnecting in 15 seconds..."}
+    elif req.action == "shutdown":
+        def run_shutdown():
+            import time
+            time.sleep(2)
+            os.system("sudo poweroff")
+        import threading
+        threading.Thread(target=run_shutdown).start()
+        return {"success": True, "message": "System poweroff command sent. Powering down..."}
+    return {"success": False, "error": "Invalid action"}
+
 @app.get("/api/network/health")
 def get_av_network_health():
     score = 100

@@ -35,7 +35,7 @@
                     <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="15" x2="23" y2="15"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="15" x2="4" y2="15"></line></svg></span> USB Serial Bridge
                 </button>
                 <button class="nav-btn" data-tab="network-tab">
-                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"></rect><rect x="2" y="16" width="6" height="6" rx="1"></rect><rect x="9" y="2" width="6" height="6" rx="1"></rect><path d="M12 8v8"></path><path d="M12 12H5v4"></path><path d="M12 12h7v4"></path></svg></span> Interface Manager
+                    <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span> Settings & Wi-Fi
                 </button>
                 <button class="nav-btn" data-tab="report-tab">
                     <span class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span> Commissioning Report
@@ -580,76 +580,112 @@
                 </div>
 
                 
-                <!-- Help Modal / User Guide -->
-                <div id="help-modal" class="modal hidden">
-                    <div class="modal-content" style="max-width: 650px; max-height: 80vh; overflow-y: auto;">
-                        <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">System User Guide & Diagnostics Index</h3>
-                        
-                        <div class="help-content" style="font-size: 0.88rem; line-height: 1.6; text-align: left; display: flex; flex-direction: column; gap: 14px; color: var(--text-primary);">
-                            <div>
-                                <strong style="color: var(--accent);">Interface Selection:</strong>
-                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Select the active hardware interface (e.g. eth0) to bind all scans and listener tools.</p>
-                            </div>
-                            <div>
-                                <strong style="color: var(--accent);">Passive Discovery:</strong>
-                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Intercepts broadcast packets (ARP, DHCP, mDNS, LLDP) passively. Stealth Mode disables active MAC vendor lookups to ensure the box makes zero noise.</p>
-                            </div>
-                            <div>
-                                <strong style="color: var(--accent);">Active Probes (ARP & Ports):</strong>
-                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">"Sweep Subnet" pings the entire CIDR range via fast ARP requests. "Probe Ports" sweeps standard media/automation ports (HTTP, HTTPS, SSH, PJLink, Crestron, etc.) on the target IP.</p>
-                            </div>
-                            <div>
-                                <strong style="color: var(--accent);">DHCP Server Audit:</strong>
-                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Broadcasts a discovery packet to audit Gateway routing, DNS details, lease times, and alert you if rogue DHCP servers exist on this link segment.</p>
-                            </div>
-                            <div>
-                                <strong style="color: var(--accent);">Beacon Mode:</strong>
-                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Rapidly toggles the physical RPi link LED at 5Hz to identify this specific box on a crowded equipment rack.</p>
-                            </div>
-                            <div>
-                                <strong style="color: var(--accent);">QoS Link Logger:</strong>
-                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Continuously pings the destination target, graphing rolling jitter/latency and exporting logs to CSV format.</p>
-                            </div>
-                            <div>
-                                <strong style="color: var(--accent);">CCTV Camera Inspector:</strong>
-                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Discovers local ONVIF cameras and tests standard defaults to audit security credentials and RTSP stream feeds.</p>
-                            </div>
-                            <div>
-                                <strong style="color: var(--accent);">Commissioning Report:</strong>
-                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Runs a complete network check, logs topology results, and generates a client handover report under the ZAVI branding.</p>
-                            </div>
+                
+                <!-- WI-FI CLIENT CONNECTION CARD -->
+                <div class="card margin-top">
+                    <h3>Wi-Fi Client Connection</h3>
+                    <p class="card-desc">Scan, associate, and connect the RPi4 to Wi-Fi access points on-site.</p>
+                    <div class="form-group row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <div>
+                            Status: <strong id="wifi-status-text" class="text-warning">Checking...</strong>
                         </div>
-
-                        <div class="modal-actions" style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 16px;">
-                            <button id="close-help-btn" class="btn btn-primary" style="width: 100%;">Dismiss Guide</button>
-                        </div>
+                        <button id="scan-wifi-btn" class="btn btn-secondary btn-sm">Scan Wi-Fi Networks</button>
+                    </div>
+                    <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>SSID</th>
+                                    <th>Signal Strength</th>
+                                    <th>Security Mode</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="wifi-table-body">
+                                <tr>
+                                    <td colspan="4" class="text-center">No networks scanned yet. Click scan to search.</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <!-- Network Config Modals (embedded in page for simplicity) -->
-                <div id="config-modal" class="modal hidden">
-                    <div class="modal-content">
-                        <h3>Configure Interface: <span id="modal-interface-name">eth0</span></h3>
-                        <div class="form-group margin-top">
-                            <label for="modal-ip-mode">Addressing Mode:</label>
-                            <select id="modal-ip-mode">
-                                <option value="dhcp">DHCP (Auto Client)</option>
-                                <option value="static">Static (Manual IP)</option>
+                <!-- PERSONALIZATION & SYSTEM ACTIONS GRID -->
+                <div class="grid-2-col margin-top">
+                    <!-- Personalization & Theme Card -->
+                    <div class="card">
+                        <h3>Personalization & Themes</h3>
+                        <p class="card-desc">Change the user interface color profile to match your branding or field aesthetics.</p>
+                        <div class="form-group">
+                            <label for="theme-select">Select Accent Profile:</label>
+                            <select id="theme-select" class="form-control" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px; width: 100%;">
+                                <option value="theme-slate">Slate Dark (Default)</option>
+                                <option value="theme-emerald">Emerald Pine (Forest)</option>
+                                <option value="theme-cyberpunk">Cyberpunk Neon (Vibrant)</option>
+                                <option value="theme-nordic">Nordic Frost (Ice Blue)</option>
+                                <option value="theme-matrix">Monochrome Matrix (Terminal)</option>
                             </select>
                         </div>
-                        <div id="modal-static-fields" class="hidden">
-                            <div class="form-group">
-                                <label for="modal-static-ip">Static IP Address with CIDR:</label>
-                                <input type="text" id="modal-static-ip" placeholder="e.g. 192.168.12.99/24">
-                                <small class="text-muted">Ensure to input the CIDR suffix (e.g. /24 for 255.255.255.0)</small>
+                    </div>
+                    
+                    <!-- System Startup & Power Card -->
+                    <div class="card">
+                        <h3>System Actions & Power</h3>
+                        <p class="card-desc">Manage system settings, startup configuration, and headless power states.</p>
+                        <div class="form-group" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid var(--border-color); margin-bottom: 16px;">
+                            <div>
+                                <strong style="display: block; font-size: 0.95rem;">Autostart on Boot</strong>
+                                <span class="text-muted" style="font-size: 0.78rem;">Launch ZAVI automatically when Pi powers up.</span>
                             </div>
+                            <label class="switch-container" style="display: inline-block; position: relative; width: 44px; height: 22px;">
+                                <input type="checkbox" id="autostart-toggle-checkbox" style="opacity: 0; width: 0; height: 0;">
+                                <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.12); border: 1px solid var(--border-color); border-radius: 22px; transition: 0.3s;"></span>
+                            </label>
                         </div>
-                        <div class="modal-actions margin-top">
-                            <button id="close-modal-btn" class="btn btn-secondary">Cancel</button>
-                            <button id="apply-network-btn" class="btn btn-primary">Apply Settings</button>
+                        <div style="display: flex; gap: 12px;">
+                            <button id="system-reboot-btn" class="btn btn-secondary" style="flex-grow: 1; border-color: rgba(255,165,0,0.3);">Reboot Pi</button>
+                            <button id="system-shutdown-btn" class="btn btn-secondary" style="flex-grow: 1; border-color: rgba(255,0,0,0.3); color: var(--danger);">Shutdown Pi</button>
                         </div>
                     </div>
                 </div>
+
+                <!-- ADVANCED SECURITY MODE TOGGLE -->
+                <div class="card margin-top">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="margin: 0;">Advanced Security Audit Mode</h3>
+                            <p class="card-desc" style="margin: 4px 0 0 0;">Reveal private installation vulnerability testing tools (Pen Test suite).</p>
+                        </div>
+                        <label class="switch-container" style="display: inline-block; position: relative; width: 44px; height: 22px;">
+                            <input type="checkbox" id="security-mode-toggle" style="opacity: 0; width: 0; height: 0;">
+                            <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.12); border: 1px solid var(--border-color); border-radius: 22px; transition: 0.3s;"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- COLLAPSIBLE SECURITY AUDITOR PANEL -->
+                <div id="security-auditor-panel" class="card margin-top hidden" style="border-color: rgba(255, 69, 58, 0.35);">
+                    <h3>Wi-Fi Security Auditor (Pen Test)</h3>
+                    <p class="card-desc">Verify encryption standards, test Client Isolation, and run a default admin credential scan on target SSIDs before client handover.</p>
+                    
+                    <div class="form-group-row-2">
+                        <div class="form-item">
+                            <label for="audit-ssid-select">Target Scanned Network:</label>
+                            <select id="audit-ssid-select" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px; width: 100%;">
+                                <option value="">-- Select SSID --</option>
+                            </select>
+                        </div>
+                        <div class="form-item align-end">
+                            <button id="run-security-audit-btn" class="btn btn-primary" style="background: var(--danger); border-color: var(--danger); width: 100%;">Start Audit Scan</button>
+                        </div>
+                    </div>
+                    
+                    <div id="audit-terminal-card" class="margin-top hidden" style="background: rgba(10, 5, 5, 0.85); border: 1px solid rgba(255, 69, 58, 0.25); padding: 18px; border-radius: 12px; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.6; color: #ff453a; max-height: 300px; overflow-y: auto;">
+                        <pre id="audit-terminal-output" style="margin: 0; white-space: pre-wrap;">[SYSTEM] Initiating Wi-Fi Security Auditor core...
+[SYSTEM] Waiting for target selection...</pre>
+                    </div>
+                </div>
+
             </section>
 
             <!-- TAB: TOPOLOGY MAP -->
@@ -771,6 +807,96 @@
                     </div>
                 </div>
             </section>
+<!-- Help Modal / User Guide -->
+                <div id="help-modal" class="modal hidden">
+                    <div class="modal-content" style="max-width: 650px; max-height: 80vh; overflow-y: auto;">
+                        <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">System User Guide & Diagnostics Index</h3>
+                        
+                        <div class="help-content" style="font-size: 0.88rem; line-height: 1.6; text-align: left; display: flex; flex-direction: column; gap: 14px; color: var(--text-primary);">
+                            <div>
+                                <strong style="color: var(--accent);">Interface Selection:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Select the active hardware interface (e.g. eth0) to bind all scans and listener tools.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">Passive Discovery:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Intercepts broadcast packets (ARP, DHCP, mDNS, LLDP) passively. Stealth Mode disables active MAC vendor lookups to ensure the box makes zero noise.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">Active Probes (ARP & Ports):</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">"Sweep Subnet" pings the entire CIDR range via fast ARP requests. "Probe Ports" sweeps standard media/automation ports (HTTP, HTTPS, SSH, PJLink, Crestron, etc.) on the target IP.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">DHCP Server Audit:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Broadcasts a discovery packet to audit Gateway routing, DNS details, lease times, and alert you if rogue DHCP servers exist on this link segment.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">Beacon Mode:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Rapidly toggles the physical RPi link LED at 5Hz to identify this specific box on a crowded equipment rack.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">QoS Link Logger:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Continuously pings the destination target, graphing rolling jitter/latency and exporting logs to CSV format.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">CCTV Camera Inspector:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Discovers local ONVIF cameras and tests standard defaults to audit security credentials and RTSP stream feeds.</p>
+                            </div>
+                            <div>
+                                <strong style="color: var(--accent);">Commissioning Report:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Runs a complete network check, logs topology results, and generates a client handover report under the ZAVI branding.</p>
+                            </div>
+                        </div>
+
+                        <div class="modal-actions" style="margin-top: 24px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                            <button id="close-help-btn" class="btn btn-primary" style="width: 100%;">Dismiss Guide</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Network Config Modals (embedded in page for simplicity) -->
+                <div id="config-modal" class="modal hidden">
+                    <div class="modal-content">
+                        <h3>Configure Interface: <span id="modal-interface-name">eth0</span></h3>
+                        <div class="form-group margin-top">
+                            <label for="modal-ip-mode">Addressing Mode:</label>
+                            <select id="modal-ip-mode">
+                                <option value="dhcp">DHCP (Auto Client)</option>
+                                <option value="static">Static (Manual IP)</option>
+                            </select>
+                        </div>
+                        <div id="modal-static-fields" class="hidden">
+                            <div class="form-group">
+                                <label for="modal-static-ip">Static IP Address with CIDR:</label>
+                                <input type="text" id="modal-static-ip" placeholder="e.g. 192.168.12.99/24">
+                                <small class="text-muted">Ensure to input the CIDR suffix (e.g. /24 for 255.255.255.0)</small>
+                            </div>
+                        </div>
+                        <div class="modal-actions margin-top">
+                            <button id="close-modal-btn" class="btn btn-secondary">Cancel</button>
+                            <button id="apply-network-btn" class="btn btn-primary">Apply Settings</button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Wi-Fi Connect Password Modal -->
+                <div id="wifi-connect-modal" class="modal hidden">
+                    <div class="modal-content" style="max-width: 400px;">
+                        <h3>Connect to Wi-Fi</h3>
+                        <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px;">
+                            SSID: <strong id="wifi-modal-ssid" style="color: var(--accent);">--</strong>
+                        </p>
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label for="wifi-modal-password">Network Password:</label>
+                            <input type="password" id="wifi-modal-password" placeholder="Enter password (leave blank if open)" style="background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: #fff; padding: 10px; border-radius: 8px; width: 100%;">
+                        </div>
+                        <div class="modal-actions" style="margin-top: 20px;">
+                            <button id="close-wifi-modal-btn" class="btn btn-secondary">Cancel</button>
+                            <button id="submit-wifi-connect-btn" class="btn btn-primary">Connect</button>
+                        </div>
+                    </div>
+                </div>
+
         </main>
     </div>
     <script src="app.js"></script>
