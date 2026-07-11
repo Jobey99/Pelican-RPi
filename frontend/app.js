@@ -1382,16 +1382,16 @@ function drawTopology() {
                 // 4. Other discovered Client Devices (Bottom Centre Right)
                 // To display active devices, we scan the DOM for devices in the discovered devices table.
                 // This makes it dynamic and guarantees we don't have to cache arrays on client!
-                const rows = Array.from(document.querySelectorAll("#device-list-body tr"));
+                const rows = Array.from(document.querySelectorAll("#devices-table-body tr"));
                 const devices = [];
                 rows.forEach(row => {
                     const cells = row.querySelectorAll("td");
-                    if (cells.length >= 4) {
+                    if (cells.length >= 5) {
                         devices.push({
                             ip: cells[0].textContent.trim(),
                             mac: cells[1].textContent.trim(),
                             vendor: cells[2].textContent.trim(),
-                            protocol: cells[3].textContent.trim()
+                            protocol: cells[4].textContent.trim()
                         });
                     }
                 });
