@@ -177,6 +177,33 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Active AV Bonjour/mDNS Browser Card -->
+                <div class="card margin-top">
+                    <div class="card-header">
+                        <h3>Active AV Bonjour/mDNS Service Browser</h3>
+                        <button id="scan-mdns-btn" class="btn btn-secondary btn-sm">Scan AV Services</button>
+                    </div>
+                    <p class="card-desc">Query the local link segment for common AV hardware advertising over Bonjour (Dante, Extron, Kramer, Sennheiser, Blustream, AirPlay, etc.).</p>
+                    <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Service / Host Name</th>
+                                    <th>Advertised AV Protocol</th>
+                                    <th>Manufacturer / Vendor</th>
+                                    <th>IP / Port Address</th>
+                                    <th>Record Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mdns-table-body">
+                                <tr>
+                                    <td colspan="5" class="text-center">No active Bonjour services scanned yet. Click scan to search the segment.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
 
             <!-- TAB 2: ACTIVE PROBES -->

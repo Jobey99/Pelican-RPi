@@ -171,20 +171,99 @@ function pollDevices() {
 function renderDevices(devices) {
     const tbody = document.getElementById("devices-table-body");
     if (!devices || devices.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center">Waiting for passive network traffic...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center">Waiting for passive network traffic...</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = devices.map(dev => `
-        <tr>
-            <td class="font-mono">${dev.ip}</td>
-            <td class="font-mono">${dev.mac}</td>
-            <td><strong>${dev.vendor}</strong></td>
-            <td>${dev.hostname}</td>
-            <td>${dev.protocols.map(p => `<span class="badge badge-on">${p}</span>`).join(" ")}</td>
-            <td class="text-muted font-mono">${dev.last_seen}</td>
-        </tr>
-    `).join("");
+    tbody.innerHTML = devices.map(dev => {
+        const hasMac = dev.mac && dev.mac !== "Unknown" && dev.mac !== "--";
+        const wolBtn = hasMac
+            ? `<button class="btn btn-secondary btn-sm quick-wol-btn" data-mac="${dev.mac}" style="padding: 2px 6px; font-size: 0.75rem; border-color: rgba(var(--accent-rgb), 0.35);">Wake</button>`
+            : "";
+            
+        const isPjlink = dev.protocols && dev.protocols.includes("PJLink");
+        const pjlinkBtn = isPjlink
+            ? `<button class="btn btn-secondary btn-sm quick-pj-btn" data-ip="${dev.ip}" data-action="on" style="padding: 2px 6px; font-size: 0.75rem; margin-left: 4px; border-color: rgba(var(--success-rgb), 0.35); color: var(--success);">ON</button>` +
+              `<button class="btn btn-secondary btn-sm quick-pj-btn" data-ip="${dev.ip}" data-action="off" style="padding: 2px 6px; font-size: 0.75rem; margin-left: 4px; border-color: rgba(255,65,108,0.35); color: var(--danger);">OFF</button>`
+            : "";
+            
+        const actions = `<div style="display: flex; gap: 4px; justify-content: flex-end;">${wolBtn}${pjlinkBtn}</div>`;
+        const protoBadges = dev.protocols ? dev.protocols.map(p => `<span class="badge badge-on">${p}</span>`).join(" ") : "";
+        
+        return `
+            <tr>
+                <td class="font-mono">${dev.ip}</td>
+                <td class="font-mono">${dev.mac}</td>
+                <td><strong>${dev.vendor}</strong></td>
+                <td>${dev.hostname}</td>
+                <td>${protoBadges}</td>
+                <td class="text-muted font-mono">${dev.last_seen}</td>
+                <td style="text-align: right;">${actions}</td>
+            </tr>
+        `;
+    }).join("");
+    
+    bindQuickActions();
+}
+
+function bindQuickActions() {
+    // 1. Wake-on-LAN Triggers
+    document.querySelectorAll(".quick-wol-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const mac = btn.getAttribute("data-mac");
+            btn.disabled = true;
+            btn.innerText = "...";
+            
+            fetch(API_BASE + "/api/control/wol", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mac: mac })
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerText = "Wake";
+                alert(data.message || "Wake-on-LAN packet broadcast successfully!");
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerText = "Wake";
+                alert(`WoL Error: ${err}`);
+            });
+        });
+    });
+
+    // 2. PJLink Power Triggers
+    document.querySelectorAll(".quick-pj-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const ip = btn.getAttribute("data-ip");
+            const action = btn.getAttribute("data-action");
+            const cmd = action === "on" ? "%1POWR 1" : "%1POWR 0";
+            
+            btn.disabled = true;
+            const origText = btn.innerText;
+            btn.innerText = "..";
+            
+            fetch(API_BASE + "/api/control/pjlink", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ip: ip, command: cmd, password: "" })
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerText = origText;
+                alert(`PJLink Power Command Sent Successfully!`);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerText = origText;
+                alert(`PJLink Error: Connection failed or port closed.`);
+            });
+        });
+    });
 }
 
 function renderSubnetGuesses(subnets) {
@@ -1926,6 +2005,48 @@ function initSettingsAndWifi() {
                 auditTerminalOutput.innerHTML = `[ERROR] Fetch Error: ${err}`;
                 auditTerminalOutput.style.color = "#ff453a";
             });
+        });
+    }
+
+    // F. Active mDNS Bonjour Browser
+    const scanMdnsBtn = document.getElementById("scan-mdns-btn");
+    const mdnsTableBody = document.getElementById("mdns-table-body");
+    
+    if (scanMdnsBtn && mdnsTableBody) {
+        scanMdnsBtn.addEventListener("click", () => {
+            scanMdnsBtn.disabled = true;
+            scanMdnsBtn.innerText = "Scanning Bonjour...";
+            mdnsTableBody.innerHTML = `<tr><td colspan="5" class="text-center">Broadcasting multicast DNS queries and collecting responses...</td></tr>`;
+            
+            const selectedIface = document.getElementById("sniffer-interface-select").value || "eth0";
+            
+            fetch(API_BASE + `/api/mdns/browse?interface=${selectedIface}`)
+                .then(r => r.json())
+                .then(data => {
+                    scanMdnsBtn.disabled = false;
+                    scanMdnsBtn.innerText = "Scan AV Services";
+                    
+                    if (data && data.length > 0) {
+                        mdnsTableBody.innerHTML = data.map(srv => `
+                            <tr>
+                                <td><strong>${srv.name}</strong></td>
+                                <td><span class="badge badge-on">${srv.service}</span></td>
+                                <td><strong>${srv.vendor}</strong></td>
+                                <td class="font-mono">${srv.ip}:${srv.port}</td>
+                                <td style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${srv.record}">
+                                    ${srv.record}
+                                </td>
+                            </tr>
+                        `).join("");
+                    } else {
+                        mdnsTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-warning">No active AV Bonjour services found on this link segment.</td></tr>`;
+                    }
+                })
+                .catch(err => {
+                    scanMdnsBtn.disabled = false;
+                    scanMdnsBtn.innerText = "Scan AV Services";
+                    mdnsTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">mDNS Scan Error: ${err}</td></tr>`;
+                });
         });
     }
 }

@@ -1,0 +1,86 @@
+{
+  "_dante-service._tcp.local": {
+    "name": "Dante Audio Node",
+    "vendor": "Audinate (Dante)"
+  },
+  "_nvx._tcp.local": {
+    "name": "Crestron NVX Endpoint",
+    "vendor": "Crestron Electronics"
+  },
+  "_crestron._tcp.local": {
+    "name": "Crestron Control System",
+    "vendor": "Crestron Electronics"
+  },
+  "_extron-control._tcp.local": {
+    "name": "Extron Control Page",
+    "vendor": "Extron Electronics"
+  },
+  "_extron-sis._tcp.local": {
+    "name": "Extron SIS Terminal",
+    "vendor": "Extron Electronics"
+  },
+  "_kramer-via._tcp.local": {
+    "name": "Kramer VIA Collaboration Hub",
+    "vendor": "Kramer Electronics"
+  },
+  "_blustream._tcp.local": {
+    "name": "Blustream AV Matrix ACM",
+    "vendor": "Blustream"
+  },
+  "_sennheiser-ssc._udp.local": {
+    "name": "Sennheiser SpeechLine / Control",
+    "vendor": "Sennheiser"
+  },
+  "_qsys-control._tcp.local": {
+    "name": "QSC Q-SYS Control Interface",
+    "vendor": "QSC Audio"
+  },
+  "_biamp-control._tcp.local": {
+    "name": "Biamp Audio System",
+    "vendor": "Biamp Systems"
+  },
+  "_shure-control._tcp.local": {
+    "name": "Shure Device Control",
+    "vendor": "Shure Inc."
+  },
+  "_clickshare._tcp.local": {
+    "name": "Barco ClickShare Unit",
+    "vendor": "Barco"
+  },
+  "_sonos._tcp.local": {
+    "name": "Sonos Speaker Node",
+    "vendor": "Sonos"
+  },
+  "_onvif._tcp.local": {
+    "name": "ONVIF CCTV Streamer",
+    "vendor": "ONVIF"
+  },
+  "_axis-video._tcp.local": {
+    "name": "Axis IP Camera Node",
+    "vendor": "Axis Communications"
+  },
+  "_ndi._tcp.local": {
+    "name": "NDI Video Stream Source",
+    "vendor": "NewTek NDI"
+  },
+  "_airplay._tcp.local": {
+    "name": "Apple AirPlay Display / Receiver",
+    "vendor": "Apple Inc."
+  },
+  "_raop._tcp.local": {
+    "name": "Apple AirPlay Audio Receiver",
+    "vendor": "Apple Inc."
+  },
+  "_googlecast._tcp.local": {
+    "name": "Google Cast / Chromecast",
+    "vendor": "Google"
+  },
+  "_spotify-connect._tcp.local": {
+    "name": "Spotify Connect Player",
+    "vendor": "Spotify"
+  },
+  "_http._tcp.local": {
+    "name": "Generic Web Control Interface",
+    "vendor": "Unknown"
+  }
+}

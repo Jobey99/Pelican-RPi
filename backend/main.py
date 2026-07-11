@@ -22,6 +22,7 @@ from ping_logger import PingMonitor
 from multicast_sniff import MulticastAuditor
 from camera_inspect import scan_onvif_cameras
 from report_gen import generate_commissioning_report
+from mdns_browser import browse_mdns_services
 
 app = FastAPI(title="RPi AV/IT Network Powerhouse API")
 
@@ -647,6 +648,10 @@ class AutostartReq(BaseModel):
 
 class SystemPowerReq(BaseModel):
     action: str # reboot / shutdown
+
+@app.get("/api/mdns/browse")
+def get_mdns_browse(interface: str = "eth0"):
+    return browse_mdns_services(interface=interface)
 
 @app.get("/api/wifi/scan")
 def get_wifi_scan():
