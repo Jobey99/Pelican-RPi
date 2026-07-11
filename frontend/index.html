@@ -840,36 +840,59 @@
                         <h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">System User Guide & Diagnostics Index</h3>
                         
                         <div class="help-content" style="font-size: 0.88rem; line-height: 1.6; text-align: left; display: flex; flex-direction: column; gap: 14px; color: var(--text-primary);">
-                            <div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 10px;">
+                                <a href="#" onclick="switchTab('network-tab'); document.getElementById('help-modal').classList.add('hidden'); event.preventDefault();" style="float: right; color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">Go to Tool &rarr;</a>
                                 <strong style="color: var(--accent);">Interface Selection:</strong>
                                 <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Select the active hardware interface (e.g. eth0) to bind all scans and listener tools.</p>
                             </div>
-                            <div>
-                                <strong style="color: var(--accent);">Passive Discovery:</strong>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 10px;">
+                                <a href="#" onclick="switchTab('dashboard-tab'); document.getElementById('help-modal').classList.add('hidden'); event.preventDefault();" style="float: right; color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">Go to Tool &rarr;</a>
+                                <strong style="color: var(--accent);">Passive Discovery (Devices list):</strong>
                                 <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Intercepts broadcast packets (ARP, DHCP, mDNS, LLDP) passively. Stealth Mode disables active MAC vendor lookups to ensure the box makes zero noise.</p>
                             </div>
-                            <div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 10px;">
+                                <a href="#" onclick="switchTab('dashboard-tab'); document.getElementById('help-modal').classList.add('hidden'); event.preventDefault();" style="float: right; color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">Go to Tool &rarr;</a>
+                                <strong style="color: var(--accent);">Active AV Bonjour/mDNS Browser:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Queries the network for Dante audio, Extron control, Kramer VIA, Sennheiser mics, Blustream matrix systems, and AirPlay streaming devices.</p>
+                            </div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 10px;">
+                                <a href="#" onclick="switchTab('active-tab'); document.getElementById('help-modal').classList.add('hidden'); event.preventDefault();" style="float: right; color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">Go to Tool &rarr;</a>
                                 <strong style="color: var(--accent);">Active Probes (ARP & Ports):</strong>
                                 <p style="margin: 4px 0 0 0; color: var(--text-secondary);">"Sweep Subnet" pings the entire CIDR range via fast ARP requests. "Probe Ports" sweeps standard media/automation ports (HTTP, HTTPS, SSH, PJLink, Crestron, etc.) on the target IP.</p>
                             </div>
-                            <div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 10px;">
+                                <a href="#" onclick="switchTab('active-tab'); document.getElementById('help-modal').classList.add('hidden'); event.preventDefault();" style="float: right; color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">Go to Tool &rarr;</a>
                                 <strong style="color: var(--accent);">DHCP Server Audit:</strong>
                                 <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Broadcasts a discovery packet to audit Gateway routing, DNS details, lease times, and alert you if rogue DHCP servers exist on this link segment.</p>
                             </div>
-                            <div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 10px;">
+                                <a href="#" onclick="switchTab('active-tab'); document.getElementById('help-modal').classList.add('hidden'); event.preventDefault();" style="float: right; color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">Go to Tool &rarr;</a>
                                 <strong style="color: var(--accent);">Beacon Mode:</strong>
                                 <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Rapidly toggles the physical RPi link LED at 5Hz to identify this specific box on a crowded equipment rack.</p>
                             </div>
-                            <div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 10px;">
+                                <a href="#" onclick="switchTab('active-tab'); document.getElementById('help-modal').classList.add('hidden'); event.preventDefault();" style="float: right; color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">Go to Tool &rarr;</a>
                                 <strong style="color: var(--accent);">QoS Link Logger:</strong>
                                 <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Continuously pings the destination target, graphing rolling jitter/latency and exporting logs to CSV format.</p>
                             </div>
-                            <div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 10px;">
+                                <a href="#" onclick="switchTab('camera-tab'); document.getElementById('help-modal').classList.add('hidden'); event.preventDefault();" style="float: right; color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">Go to Tool &rarr;</a>
                                 <strong style="color: var(--accent);">CCTV Camera Inspector:</strong>
                                 <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Discovers local ONVIF cameras and tests standard defaults to audit security credentials and RTSP stream feeds.</p>
                             </div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 10px;">
+                                <a href="#" onclick="switchTab('network-tab'); document.getElementById('help-modal').classList.add('hidden'); event.preventDefault();" style="float: right; color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">Go to Tool &rarr;</a>
+                                <strong style="color: var(--accent);">Wi-Fi & System Settings:</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Configure the RPi's Wi-Fi connection, choose personalization color profiles, toggle server autostart on reboot, and reboot or shut down the Pi.</p>
+                            </div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 10px;">
+                                <a href="#" onclick="switchTab('network-tab'); document.getElementById('help-modal').classList.add('hidden'); event.preventDefault();" style="float: right; color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">Go to Tool &rarr;</a>
+                                <strong style="color: var(--accent);">Vulnerability Auditor (Pen Test):</strong>
+                                <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Test wireless segments for security flags like WPA3 encryption, router administration exposures, and default credential leaks. (Access via Settings toggle).</p>
+                            </div>
                             <div>
-                                <strong style="color: var(--accent);">Commissioning Report:</strong>
+                                <a href="#" onclick="switchTab('report-tab'); document.getElementById('help-modal').classList.add('hidden'); event.preventDefault();" style="float: right; color: var(--accent); font-size: 0.8rem; text-decoration: none; font-weight: 600;">Go to Tool &rarr;</a>
+                                <strong style="color: var(--accent);">Commissioning Handover Report:</strong>
                                 <p style="margin: 4px 0 0 0; color: var(--text-secondary);">Runs a complete network check, logs topology results, and generates a client handover report under the ZAVI branding.</p>
                             </div>
                         </div>

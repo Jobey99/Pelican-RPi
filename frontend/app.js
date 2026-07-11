@@ -44,18 +44,17 @@ function initTabNavigation() {
     const tabs = document.querySelectorAll(".tab-content");
     const tabTitle = document.getElementById("tab-title");
 
-    navButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const target = btn.getAttribute("data-tab");
-            
+    window.switchTab = function(target) {
+        const btn = Array.from(navButtons).find(b => b.getAttribute("data-tab") === target);
+        if (btn) {
             navButtons.forEach(b => b.classList.remove("active"));
             tabs.forEach(t => t.classList.remove("active"));
             
             btn.classList.add("active");
-            document.getElementById(target).classList.add("active");
+            const targetEl = document.getElementById(target);
+            if (targetEl) targetEl.classList.add("active");
             activeTab = target;
             
-            // Set dynamic titles
             switch(target) {
                 case "dashboard-tab":
                     tabTitle.innerText = "Passive Network Auto-Discoverer";
@@ -69,7 +68,20 @@ function initTabNavigation() {
                 case "network-tab":
                     tabTitle.innerText = "Linux Interface Configuration";
                     break;
+                case "camera-tab":
+                    tabTitle.innerText = "CCTV Camera Inspector";
+                    break;
+                case "report-tab":
+                    tabTitle.innerText = "Site Handover Commissioning Report";
+                    break;
             }
+        }
+    };
+
+    navButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const target = btn.getAttribute("data-tab");
+            window.switchTab(target);
         });
     });
 }
